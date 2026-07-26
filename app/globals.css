@@ -147,18 +147,18 @@ select:focus-visible {
   opacity: 0.13;
 }
 
-.editor-background-accent {
+.workspace-background-accent {
   position: relative;
   isolation: isolate;
 }
 
-.editor-background-accent > * {
+.workspace-background-accent > * {
   position: relative;
   z-index: 1;
 }
 
-.editor-background-accent::before,
-.editor-background-accent::after {
+.workspace-background-accent::before,
+.workspace-background-accent::after {
   position: absolute;
   z-index: 0;
   content: "";
@@ -172,7 +172,7 @@ select:focus-visible {
   opacity: 0.1;
 }
 
-.editor-background-accent::before {
+.workspace-background-accent::before {
   top: 0;
   right: 0;
   width: min(42rem, 44vw);
@@ -184,7 +184,7 @@ select:focus-visible {
   );
 }
 
-.editor-background-accent::after {
+.workspace-background-accent::after {
   bottom: 0;
   left: 0;
   width: min(34rem, 38vw);

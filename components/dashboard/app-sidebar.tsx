@@ -29,7 +29,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, enabled: true },
   { label: "Create Layout", href: "/editor", icon: Sparkles, enabled: true },
   { label: "Projects", href: "/projects", icon: FolderOpen, enabled: false },
-  { label: "Service Sets", href: "/service-sets", icon: SlidersHorizontal, enabled: false },
+  { label: "Service Sets", href: "/service-sets", icon: SlidersHorizontal, enabled: true },
   { label: "Passport Presets", href: "/passport-presets", icon: FileImage, enabled: false },
   { label: "Billing", href: "/billing", icon: CreditCard, enabled: false },
   { label: "Settings", href: "/settings", icon: Settings, enabled: false },
@@ -40,10 +40,7 @@ export function SidebarContent() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-18 items-center gap-3 px-5">
-        <div className="font-display flex size-9 items-center justify-center rounded-xl bg-[var(--ink)] text-sm text-[var(--inverted-ink)]">
-          P
-        </div>
+      <div className="flex h-18 items-center px-5">
         <div>
           <p className="font-display text-base text-[var(--ink)]">PrintChum</p>
           <p className="font-technical text-[9px] uppercase tracking-wider text-[var(--gray-500)]">

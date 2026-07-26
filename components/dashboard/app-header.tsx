@@ -19,6 +19,7 @@ import { mockAccount } from "@/features/account/mock-account";
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/editor": "Create Layout",
+  "/service-sets": "Service Sets",
 };
 
 export function AppHeader() {

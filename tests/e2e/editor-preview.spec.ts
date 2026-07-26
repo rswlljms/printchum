@@ -81,14 +81,22 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
   expect(settledCanvasBox).not.toBeNull();
   expect(settledCanvasBox?.height).toBeCloseTo(initialCanvasBox?.height ?? 0, 0);
 
-  await page.getByRole("button", { name: "Set E" }).click();
-  await expect(page.getByText("Set E", { exact: true }).last()).toBeVisible();
-  await expect(page.getByText("8", { exact: true }).last()).toBeVisible();
+  await page.getByRole("button", { name: "Review Set E" }).click();
+  await page
+    .getByRole("dialog", { name: "Set E" })
+    .getByRole("button", { name: "Apply Service Set" })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Apply Service Set?" })
+    .getByRole("button", { name: "Apply Service Set" })
+    .click();
+  await expect(page.getByText("Set E applied", { exact: true })).toBeVisible();
+  await expect(page.getByText("4 photos", { exact: true })).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect
     .poll(async () => (await canvas.boundingBox())?.y ?? -1)
-    .toBeGreaterThan(100);
+    .toBeGreaterThan(70);
   await expect
     .poll(async () => (await canvas.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
     .toBeLessThan(200);

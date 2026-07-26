@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { serviceSets } from "@/features/editor/mock-data/service-sets";
 import {
   createCustomPhotoSizeItem,
   createPhotoSizeItemFromPreset,
@@ -41,6 +40,25 @@ import {
 } from "@/lib/paper/presets";
 import { calculatePrintableArea } from "@/lib/paper/printable-area";
 import { paperSettingsSchema } from "@/lib/paper/schemas";
+import { createEditorConfigurationFromServiceSet } from "@/lib/service-sets/apply-service-set";
+import { createServiceSetConfigurationFingerprint } from "@/lib/service-sets/comparison";
+import {
+  createServiceSet as createServiceSetOperation,
+  duplicateServiceSet as duplicateServiceSetOperation,
+  moveServiceSet as moveServiceSetOperation,
+  removeCustomServiceSet,
+  setDefaultServiceSet as setDefaultServiceSetOperation,
+  setServiceSetStatus as setServiceSetStatusOperation,
+  updateCustomServiceSet,
+} from "@/lib/service-sets/operations";
+import { createInitialServiceSets } from "@/lib/service-sets/presets";
+import { serviceSetSchema } from "@/lib/service-sets/schemas";
+import type {
+  BackgroundPreference,
+  NewServiceSet,
+  ServiceSetChanges,
+  ServiceSetStatus,
+} from "@/lib/service-sets/types";
 import type {
   AutoArrangeMode,
   CustomPaperPreset,
@@ -96,6 +114,32 @@ type EditorActions = {
   clearPhotoSizes: () => void;
   replacePhotoSizes: (photoSizes: PhotoSizeItem[]) => void;
   selectServiceSet: (serviceSetId: string) => void;
+  applyServiceSet: (serviceSetId: string) => boolean;
+  clearSelectedServiceSet: () => void;
+  reapplySelectedServiceSet: () => boolean;
+  setBackgroundPreference: (preference: BackgroundPreference) => void;
+  createServiceSet: (input: NewServiceSet) => string | null;
+  updateServiceSet: (
+    serviceSetId: string,
+    changes: ServiceSetChanges,
+  ) => boolean;
+  duplicateServiceSet: (serviceSetId: string) => string | null;
+  removeServiceSet: (serviceSetId: string) => boolean;
+  setServiceSetStatus: (
+    serviceSetId: string,
+    status: ServiceSetStatus,
+  ) => void;
+  setDefaultServiceSet: (serviceSetId: string) => boolean;
+  moveServiceSet: (
+    serviceSetId: string,
+    direction: "up" | "down",
+  ) => void;
+  saveCurrentEditorAsServiceSet: (
+    metadata: Pick<
+      NewServiceSet,
+      "name" | "description" | "price" | "currencyCode"
+    >,
+  ) => string | null;
   setActivePage: (pageIndex: number) => void;
   setPreviewScale: (scale: number) => void;
   restoreWorkspaceSession: () => void;
@@ -139,7 +183,10 @@ function createInitialState(): EditorState {
     backgroundMode: "original",
     backgroundColor: "#ffffff",
     backgroundRemoved: false,
+    serviceSets: createInitialServiceSets(),
     selectedServiceSetId: null,
+    appliedServiceSetSnapshot: null,
+    serviceSetModificationState: "unselected",
     photoSizes: [],
     paper: createPaperSettingsFromPreset(defaultPaperPreset),
     customPaperPresets: [],
@@ -216,6 +263,33 @@ function calculateEditorLayout(state: EditorState): Pick<EditorState, "layoutRes
   }
 }
 
+function getServiceSetModificationState(
+  state: EditorState,
+  changes: Partial<
+    Pick<
+      EditorState,
+      | "photoSizes"
+      | "paper"
+      | "backgroundMode"
+      | "backgroundColor"
+    >
+  >,
+): EditorState["serviceSetModificationState"] {
+  if (!state.appliedServiceSetSnapshot) {
+    return "unselected";
+  }
+  const fingerprint = createServiceSetConfigurationFingerprint({
+    photoSizes: changes.photoSizes ?? state.photoSizes,
+    paper: changes.paper ?? state.paper,
+    backgroundMode: changes.backgroundMode ?? state.backgroundMode,
+    backgroundColor: changes.backgroundColor ?? state.backgroundColor,
+  });
+  return fingerprint ===
+    state.appliedServiceSetSnapshot.normalizedConfigurationHash
+    ? "applied"
+    : "modified";
+}
+
 function updatePaperAndLayout(
   state: EditorState,
   paper: PaperSettings,
@@ -242,6 +316,9 @@ function updatePaperAndLayout(
 
   return {
     paper,
+    serviceSetModificationState: getServiceSetModificationState(state, {
+      paper,
+    }),
     ...calculateEditorLayout(candidateState),
   };
 }
@@ -308,18 +385,18 @@ function customPresetToPaperSettings(
 function updatePhotoSizesAndLayout(
   state: EditorState,
   photoSizes: PhotoSizeItem[],
-  selectedServiceSetId: string | null = null,
 ): Partial<EditorState> {
   const nextState: EditorState = {
     ...state,
     photoSizes,
-    selectedServiceSetId,
     activePageIndex: 0,
   };
 
   return {
     photoSizes,
-    selectedServiceSetId,
+    serviceSetModificationState: getServiceSetModificationState(state, {
+      photoSizes,
+    }),
     ...calculateEditorLayout(nextState),
   };
 }
@@ -504,11 +581,17 @@ export const useEditorStore = create<EditorStore>()(
   setCuttingGuidesEnabled: (cuttingGuidesEnabled) => {
     set((state) => ({
       paper: { ...state.paper, cuttingGuidesEnabled },
+      serviceSetModificationState: getServiceSetModificationState(state, {
+        paper: { ...state.paper, cuttingGuidesEnabled },
+      }),
     }));
   },
   setSizeLabelsEnabled: (sizeLabelsEnabled) => {
     set((state) => ({
       paper: { ...state.paper, sizeLabelsEnabled },
+      serviceSetModificationState: getServiceSetModificationState(state, {
+        paper: { ...state.paper, sizeLabelsEnabled },
+      }),
     }));
   },
   setGlobalPhotoRotation: (allowPhotoRotation) => {
@@ -787,27 +870,207 @@ export const useEditorStore = create<EditorStore>()(
     set((state) => updatePhotoSizesAndLayout(state, photoSizes));
   },
   selectServiceSet: (serviceSetId) => {
-    const serviceSet = serviceSets.find((item) => item.id === serviceSetId);
-    if (!serviceSet) {
-      return;
+    get().applyServiceSet(serviceSetId);
+  },
+  applyServiceSet: (serviceSetId) => {
+    const state = get();
+    const serviceSet = state.serviceSets.find(
+      (item) => item.id === serviceSetId,
+    );
+    const parsed = serviceSetSchema.safeParse(serviceSet);
+    if (
+      !serviceSet ||
+      serviceSet.status === "disabled" ||
+      !parsed.success
+    ) {
+      return false;
     }
-    const photoSizes = serviceSet.items.flatMap((item) => {
-      const preset = findPhotoSizePreset(item.sizePresetId);
-      if (!preset) {
-        return [];
-      }
-      return [{
-        ...createPhotoSizeItemFromPreset(preset, item.quantity),
-      }];
-    });
-    set((state) => {
-      const nextState = {
+    try {
+      const configuration =
+        createEditorConfigurationFromServiceSet(parsed.data);
+      const candidateState: EditorState = {
         ...state,
+        ...configuration,
         selectedServiceSetId: serviceSetId,
-        photoSizes,
         activePageIndex: 0,
       };
-      return { ...nextState, ...calculateEditorLayout(nextState) };
+      const normalizedConfigurationHash =
+        createServiceSetConfigurationFingerprint(configuration);
+      set({
+        ...configuration,
+        selectedServiceSetId: serviceSetId,
+        appliedServiceSetSnapshot: {
+          serviceSetId,
+          serviceSetName: serviceSet.name,
+          price: serviceSet.price,
+          currencyCode: serviceSet.currencyCode,
+          normalizedConfigurationHash,
+          appliedAt: new Date().toISOString(),
+        },
+        serviceSetModificationState: "applied",
+        ...calculateEditorLayout(candidateState),
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  clearSelectedServiceSet: () =>
+    set({
+      selectedServiceSetId: null,
+      appliedServiceSetSnapshot: null,
+      serviceSetModificationState: "unselected",
+    }),
+  reapplySelectedServiceSet: () => {
+    const serviceSetId = get().selectedServiceSetId;
+    return serviceSetId ? get().applyServiceSet(serviceSetId) : false;
+  },
+  setBackgroundPreference: (preference) => {
+    set((state) => {
+      const backgroundMode = preference.mode;
+      const backgroundColor =
+        preference.mode === "solid" ? preference.color : "#ffffff";
+      return {
+        backgroundMode,
+        backgroundColor,
+        serviceSetModificationState: getServiceSetModificationState(
+          state,
+          { backgroundMode, backgroundColor },
+        ),
+      };
+    });
+  },
+  createServiceSet: (input) => {
+    try {
+      const result = createServiceSetOperation(get().serviceSets, input);
+      set({ serviceSets: result.serviceSets });
+      return result.created.id;
+    } catch {
+      return null;
+    }
+  },
+  updateServiceSet: (serviceSetId, changes) => {
+    const serviceSets = updateCustomServiceSet(
+      get().serviceSets,
+      serviceSetId,
+      changes,
+    );
+    if (!serviceSets) {
+      return false;
+    }
+    set({ serviceSets });
+    return true;
+  },
+  duplicateServiceSet: (serviceSetId) => {
+    const result = duplicateServiceSetOperation(
+      get().serviceSets,
+      serviceSetId,
+    );
+    if (!result) {
+      return null;
+    }
+    set({ serviceSets: result.serviceSets });
+    return result.duplicate.id;
+  },
+  removeServiceSet: (serviceSetId) => {
+    const state = get();
+    const serviceSets = removeCustomServiceSet(
+      state.serviceSets,
+      serviceSetId,
+    );
+    if (!serviceSets) {
+      return false;
+    }
+    set({
+      serviceSets,
+      ...(state.selectedServiceSetId === serviceSetId
+        ? {
+            selectedServiceSetId: null,
+            appliedServiceSetSnapshot: null,
+            serviceSetModificationState: "unselected" as const,
+          }
+        : {}),
+    });
+    return true;
+  },
+  setServiceSetStatus: (serviceSetId, status) => {
+    set((state) => ({
+      serviceSets: setServiceSetStatusOperation(
+        state.serviceSets,
+        serviceSetId,
+        status,
+      ),
+    }));
+  },
+  setDefaultServiceSet: (serviceSetId) => {
+    const serviceSets = setDefaultServiceSetOperation(
+      get().serviceSets,
+      serviceSetId,
+    );
+    if (!serviceSets) {
+      return false;
+    }
+    set({ serviceSets });
+    return true;
+  },
+  moveServiceSet: (serviceSetId, direction) => {
+    set((state) => ({
+      serviceSets: moveServiceSetOperation(
+        state.serviceSets,
+        serviceSetId,
+        direction,
+      ),
+    }));
+  },
+  saveCurrentEditorAsServiceSet: (metadata) => {
+    const state = get();
+    const paperPreset = state.paper.presetId
+      ? findPaperPreset(state.paper.presetId)
+      : undefined;
+    const paper = paperPreset
+      ? {
+          source: "preset" as const,
+          presetId: paperPreset.id,
+          orientation: state.paper.orientation,
+          margin: state.paper.margin,
+          horizontalSpacing: state.paper.horizontalSpacing,
+          verticalSpacing: state.paper.verticalSpacing,
+          unit: state.paper.unit,
+        }
+      : {
+          source: "custom" as const,
+          name: state.paper.name,
+          width: state.paper.width,
+          height: state.paper.height,
+          unit: state.paper.unit,
+          orientation: state.paper.orientation,
+          margin: state.paper.margin,
+          horizontalSpacing: state.paper.horizontalSpacing,
+          verticalSpacing: state.paper.verticalSpacing,
+        };
+    return get().createServiceSet({
+      ...metadata,
+      status: "enabled",
+      isDefault: false,
+      photoItems: state.photoSizes.map((item) => ({
+        id: item.id,
+        photoSizePresetId: item.presetId,
+        name: item.name,
+        width: item.width,
+        height: item.height,
+        unit: item.unit,
+        quantity: item.quantity,
+        allowRotation: item.allowRotation,
+        nameplateEnabled: item.nameplateEnabled,
+      })),
+      paper,
+      background:
+        state.backgroundMode === "solid"
+          ? { mode: "solid", color: state.backgroundColor }
+          : { mode: state.backgroundMode },
+      cuttingGuidesEnabled: state.paper.cuttingGuidesEnabled,
+      sizeLabelsEnabled: state.paper.sizeLabelsEnabled,
+      allowPhotoRotation: state.paper.allowPhotoRotation,
     });
   },
   setActivePage: (pageIndex) => {
@@ -841,8 +1104,10 @@ export const useEditorStore = create<EditorStore>()(
   resetEditor: () => {
     const objectUrl = get().sourceObjectUrl;
     const customPaperPresets = get().customPaperPresets;
+    const serviceSets = get().serviceSets;
     const nextState = createInitialState();
     nextState.customPaperPresets = customPaperPresets;
+    nextState.serviceSets = serviceSets;
     set({ ...nextState, ...calculateEditorLayout(nextState) });
     revokeObjectUrl(objectUrl);
   },

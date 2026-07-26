@@ -1,32 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { photoSizePresets } from "@/features/editor/photo-sizes/presets";
 import {
   formatServiceSetPrice,
   summarizeServiceSetItems,
 } from "@/features/editor/service-set-presentation";
-import type { ServiceSet } from "@/features/editor/types";
-
-const serviceSet: ServiceSet = {
-  id: "set-test",
-  name: "Set Test",
-  price: 40,
-  currency: "PHP",
-  items: [
-    { sizePresetId: "1x1", quantity: 1 },
-    { sizePresetId: "2x2", quantity: 4 },
-  ],
-};
+import { builtInServiceSets } from "@/lib/service-sets/presets";
 
 describe("service-set presentation", () => {
   it("formats prices in Philippine pesos", () => {
-    expect(formatServiceSetPrice(serviceSet)).toBe("₱40.00");
+    expect(formatServiceSetPrice(builtInServiceSets[0])).toBe("₱40.00");
   });
 
   it("summarizes each photo size and piece count", () => {
-    expect(summarizeServiceSetItems(serviceSet, photoSizePresets)).toEqual([
-      { key: "1x1-0", text: "1 pc · 1 × 1 in" },
-      { key: "2x2-1", text: "4 pcs · 2 × 2 in" },
+    expect(summarizeServiceSetItems(builtInServiceSets[3])).toEqual([
+      { key: "service-set-d-1x1", text: "6 pcs · 1 × 1 in" },
+      { key: "service-set-d-2x2", text: "2 pcs · 2 × 2 in" },
     ]);
   });
 });

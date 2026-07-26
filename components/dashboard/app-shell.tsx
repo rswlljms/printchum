@@ -9,7 +9,12 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
         <AppSidebar />
         <div className="min-h-screen lg:pl-56">
           <AppHeader />
-          <main>{children}</main>
+          <main
+            className="workspace-background-accent min-h-[calc(100vh-4.5rem)]"
+            data-workspace-accent="halftone"
+          >
+            {children}
+          </main>
         </div>
       </div>
     </TooltipProvider>

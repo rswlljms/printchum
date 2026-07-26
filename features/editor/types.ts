@@ -6,6 +6,11 @@ import type {
   CustomPaperPreset,
   PaperSettings,
 } from "@/lib/paper/types";
+import type {
+  AppliedServiceSetSnapshot,
+  ServiceSet,
+  ServiceSetModificationState,
+} from "@/lib/service-sets/types";
 
 export type {
   CustomPaperPreset,
@@ -63,18 +68,6 @@ export type PhotoSizeItemChanges = Partial<
   Omit<PhotoSizeItem, "id" | "presetId">
 >;
 
-export type ServiceSet = {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: "PHP";
-  items: Array<{
-    sizePresetId: string;
-    quantity: number;
-  }>;
-};
-
 export type NameplateSettings = {
   enabled: boolean;
   primaryText: string;
@@ -90,7 +83,10 @@ export type EditorState = {
   backgroundMode: "original" | "transparent" | "solid";
   backgroundColor: string;
   backgroundRemoved: boolean;
+  serviceSets: ServiceSet[];
   selectedServiceSetId: string | null;
+  appliedServiceSetSnapshot: AppliedServiceSetSnapshot | null;
+  serviceSetModificationState: ServiceSetModificationState;
   photoSizes: PhotoSizeItem[];
   paper: PaperSettings;
   customPaperPresets: CustomPaperPreset[];

@@ -20,7 +20,7 @@ export function DashboardOverview() {
       className="page-enter mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6 xl:space-y-10"
       data-dashboard-layout="wide"
     >
-      <section className="halftone-field flex flex-col justify-between gap-6 border-b border-[var(--gray-200)] py-8 sm:flex-row sm:items-end">
+      <section className="flex flex-col justify-between gap-6 border-b border-[var(--gray-200)] py-8 sm:flex-row sm:items-end">
         <div>
           <Badge className="mb-3">{mockAccount.plan} workspace</Badge>
           <h2 className="font-display text-4xl leading-none text-[var(--ink)]">

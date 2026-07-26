@@ -72,8 +72,7 @@ export function EditorWorkspace() {
 
   return (
     <div
-      className="editor-background-accent page-enter mx-auto max-w-[1800px] p-4 sm:p-6"
-      data-workspace-accent="halftone"
+      className="page-enter mx-auto max-w-[1800px] p-4 sm:p-6"
     >
       <div className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--gray-200)] pb-6 xl:flex-row xl:items-end">
         <div>
