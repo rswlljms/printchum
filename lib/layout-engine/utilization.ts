@@ -26,5 +26,5 @@ export function calculateUtilizationPercent(
   const availableArea =
     printableWidthInches * printableHeightInches * pages.length;
 
-  return (occupiedArea / availableArea) * 100;
+  return Math.min(Math.max((occupiedArea / availableArea) * 100, 0), 100);
 }

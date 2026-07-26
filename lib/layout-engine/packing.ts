@@ -1,9 +1,9 @@
 import { createLayoutPage } from "./pagination";
 import {
-  LayoutCalculationError,
   type ExpandedLayoutItem,
   type LayoutItem,
   type LayoutPage,
+  type UnplacedLayoutItem,
 } from "./types";
 
 const FLOATING_POINT_EPSILON = 1e-9;
@@ -20,6 +20,11 @@ type CandidateDimensions = {
   widthInches: number;
   heightInches: number;
   rotation: 0 | 90;
+};
+
+export type PackingResult = {
+  pages: LayoutPage[];
+  unplacedItems: UnplacedLayoutItem[];
 };
 
 function fits(value: number, available: number): boolean {
@@ -57,26 +62,26 @@ function chooseCandidate(
   return null;
 }
 
-function assertItemFitsPrintableArea(
+function createUnplacedItem(
   item: ExpandedLayoutItem,
-  printableWidth: number,
-  printableHeight: number,
-): void {
-  if (chooseCandidate(item, printableWidth, printableHeight) === null) {
-    throw new LayoutCalculationError(
-      "ITEM_DOES_NOT_FIT",
-      `Item "${item.sourceItemId}" does not fit within the printable area.`,
-      item.sourceItemId,
-    );
-  }
+): UnplacedLayoutItem {
+  return {
+    id: item.instanceId,
+    sourceItemId: item.sourceItemId,
+    widthInches: item.widthInches,
+    heightInches: item.heightInches,
+    allowRotation: item.allowRotation,
+    reason: "ITEM_DOES_NOT_FIT",
+    message: `Item "${item.sourceItemId}" does not fit within the printable area.`,
+  };
 }
 
 export function packItemsOnPages(
   items: ExpandedLayoutItem[],
   area: PackingArea,
-): LayoutPage[] {
+): PackingResult {
   if (items.length === 0) {
-    return [];
+    return { pages: [], unplacedItems: [] };
   }
 
   const printableWidth =
@@ -84,15 +89,28 @@ export function packItemsOnPages(
   const printableHeight =
     area.paperHeightInches - area.marginInches * 2;
 
+  const placeableItems: ExpandedLayoutItem[] = [];
+  const unplacedItems: UnplacedLayoutItem[] = [];
+
+  for (const item of items) {
+    if (chooseCandidate(item, printableWidth, printableHeight) === null) {
+      unplacedItems.push(createUnplacedItem(item));
+    } else {
+      placeableItems.push(item);
+    }
+  }
+
+  if (placeableItems.length === 0) {
+    return { pages: [], unplacedItems };
+  }
+
   const pages: LayoutPage[] = [createLayoutPage(0)];
   let pageIndex = 0;
   let cursorX = area.marginInches;
   let cursorY = area.marginInches;
   let rowHeight = 0;
 
-  for (const item of items) {
-    assertItemFitsPrintableArea(item, printableWidth, printableHeight);
-
+  for (const item of placeableItems) {
     let candidate = chooseCandidate(
       item,
       area.paperWidthInches - area.marginInches - cursorX,
@@ -120,10 +138,8 @@ export function packItemsOnPages(
     }
 
     if (candidate === null) {
-      throw new LayoutCalculationError(
-        "ITEM_DOES_NOT_FIT",
-        `Item "${item.sourceItemId}" does not fit within the printable area.`,
-        item.sourceItemId,
+      throw new Error(
+        `Packing invariant failed for preflighted item "${item.instanceId}".`,
       );
     }
 
@@ -143,5 +159,5 @@ export function packItemsOnPages(
     rowHeight = Math.max(rowHeight, candidate.heightInches);
   }
 
-  return pages;
+  return { pages, unplacedItems };
 }

@@ -44,13 +44,14 @@ export type LayoutPage = {
 export type LayoutResult = {
   pages: LayoutPage[];
   totalItems: number;
+  placedItems: number;
+  unplacedItems: UnplacedLayoutItem[];
   utilizationPercent: number;
 };
 
 export type LayoutErrorCode =
   | "INVALID_INPUT"
-  | "INVALID_PRINTABLE_AREA"
-  | "ITEM_DOES_NOT_FIT";
+  | "INVALID_PRINTABLE_AREA";
 
 export class LayoutCalculationError extends Error {
   constructor(
@@ -69,4 +70,40 @@ export type ExpandedLayoutItem = {
   widthInches: number;
   heightInches: number;
   allowRotation: boolean;
+};
+
+export type UnplacedLayoutItem = {
+  id: string;
+  sourceItemId: string;
+  widthInches: number;
+  heightInches: number;
+  allowRotation: boolean;
+  reason: "ITEM_DOES_NOT_FIT";
+  message: string;
+};
+
+export type MeasuredValue = {
+  value: number;
+  unit: MeasurementUnit;
+};
+
+export type MeasuredLayoutInput = {
+  paper: {
+    width: number;
+    height: number;
+    unit: MeasurementUnit;
+    orientation: PaperOrientation;
+  };
+  margin: MeasuredValue;
+  horizontalSpacing: MeasuredValue;
+  verticalSpacing: MeasuredValue;
+  items: Array<{
+    id: string;
+    width: number;
+    height: number;
+    unit: MeasurementUnit;
+    quantity: number;
+    allowRotation: boolean;
+    nameplate?: NameplateLayoutConfig;
+  }>;
 };

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { calculateLayout } from "@/lib/layout-engine/calculate-layout";
 import { orientPaper } from "@/lib/layout-engine/paper-sizes";
 import {
-  LayoutCalculationError,
   type LayoutInput,
   type LayoutItem,
 } from "@/lib/layout-engine/types";
@@ -80,6 +79,8 @@ describe("calculateLayout", () => {
       }
     }
     expect(result.totalItems).toBe(13);
+    expect(result.placedItems).toBe(13);
+    expect(result.unplacedItems).toEqual([]);
   });
 
   it("creates additional pages when the current page is full", () => {
@@ -118,30 +119,42 @@ describe("calculateLayout", () => {
     expect(calculateLayout(baseInput)).toEqual(calculateLayout(baseInput));
   });
 
-  it("rejects an oversized item instead of dropping it", () => {
-    const calculateOversized = () =>
-      calculateLayout({
-        ...baseInput,
-        items: [
-          {
-            id: "oversized",
-            widthInches: 9,
-            heightInches: 12,
-            quantity: 1,
-            allowRotation: true,
-          },
-        ],
-      });
+  it("reports every oversized copy and continues placing valid items", () => {
+    const result = calculateLayout({
+      ...baseInput,
+      items: [
+        {
+          id: "valid",
+          widthInches: 2,
+          heightInches: 2,
+          quantity: 2,
+          allowRotation: false,
+        },
+        {
+          id: "oversized",
+          widthInches: 9,
+          heightInches: 12,
+          quantity: 2,
+          allowRotation: true,
+        },
+      ],
+    });
 
-    expect(calculateOversized).toThrow(LayoutCalculationError);
-    try {
-      calculateOversized();
-    } catch (error) {
-      expect(error).toMatchObject({
-        code: "ITEM_DOES_NOT_FIT",
+    expect(result.totalItems).toBe(4);
+    expect(result.placedItems).toBe(2);
+    expect(result.pages[0].items).toHaveLength(2);
+    expect(result.unplacedItems).toEqual([
+      expect.objectContaining({
+        id: "oversized-1",
         sourceItemId: "oversized",
-      });
-    }
+        reason: "ITEM_DOES_NOT_FIT",
+      }),
+      expect.objectContaining({
+        id: "oversized-2",
+        sourceItemId: "oversized",
+        reason: "ITEM_DOES_NOT_FIT",
+      }),
+    ]);
   });
 
   it("rejects margins that remove the printable area", () => {
@@ -151,5 +164,17 @@ describe("calculateLayout", () => {
         marginInches: 5,
       }),
     ).toThrowError(/Margins leave no printable area/);
+  });
+
+  it("rejects negative margins and invalid spacing", () => {
+    expect(() =>
+      calculateLayout({ ...baseInput, marginInches: -0.1 }),
+    ).toThrowError(/Margin must be a finite non-negative number/);
+    expect(() =>
+      calculateLayout({ ...baseInput, horizontalSpacingInches: -0.1 }),
+    ).toThrowError(/Horizontal spacing must be a finite non-negative number/);
+    expect(() =>
+      calculateLayout({ ...baseInput, verticalSpacingInches: Number.NaN }),
+    ).toThrowError(/Vertical spacing must be a finite non-negative number/);
   });
 });

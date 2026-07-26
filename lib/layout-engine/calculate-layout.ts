@@ -1,10 +1,12 @@
 import { orientPaper } from "./paper-sizes";
 import { packItemsOnPages } from "./packing";
+import { normalizeLayoutInput } from "./normalize-layout-input";
 import {
   LayoutCalculationError,
   type ExpandedLayoutItem,
   type LayoutInput,
   type LayoutResult,
+  type MeasuredLayoutInput,
 } from "./types";
 import { calculateUtilizationPercent } from "./utilization";
 
@@ -86,7 +88,8 @@ export function calculateLayout(input: LayoutInput): LayoutResult {
     );
   }
 
-  const pages = packItemsOnPages(expandItems(input), {
+  const expandedItems = expandItems(input);
+  const { pages, unplacedItems } = packItemsOnPages(expandedItems, {
     paperWidthInches: paper.widthInches,
     paperHeightInches: paper.heightInches,
     marginInches: input.marginInches,
@@ -96,11 +99,22 @@ export function calculateLayout(input: LayoutInput): LayoutResult {
 
   return {
     pages,
-    totalItems: pages.reduce((total, page) => total + page.items.length, 0),
+    totalItems: expandedItems.length,
+    placedItems: pages.reduce(
+      (total, page) => total + page.items.length,
+      0,
+    ),
+    unplacedItems,
     utilizationPercent: calculateUtilizationPercent(
       pages,
       printableWidth,
       printableHeight,
     ),
   };
+}
+
+export function calculateLayoutFromMeasurements(
+  input: MeasuredLayoutInput,
+): LayoutResult {
+  return calculateLayout(normalizeLayoutInput(input));
 }

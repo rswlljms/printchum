@@ -648,7 +648,18 @@ type LayoutPage = {
 
 type LayoutResult = {
   pages: LayoutPage[];
+  // Total requested copies, including copies that could not be placed.
   totalItems: number;
+  placedItems: number;
+  unplacedItems: Array<{
+    id: string;
+    sourceItemId: string;
+    widthInches: number;
+    heightInches: number;
+    allowRotation: boolean;
+    reason: "ITEM_DOES_NOT_FIT";
+    message: string;
+  }>;
   utilizationPercent: number;
 };
 ```
