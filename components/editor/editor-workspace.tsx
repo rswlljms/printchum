@@ -28,6 +28,13 @@ export function EditorWorkspace() {
   const setPreviewScale = useEditorStore((state) => state.setPreviewScale);
   const resetEditor = useEditorStore((state) => state.resetEditor);
   const disposeSourcePhoto = useEditorStore((state) => state.disposeSourcePhoto);
+  const restoreWorkspaceSession = useEditorStore(
+    (state) => state.restoreWorkspaceSession,
+  );
+
+  useEffect(() => {
+    restoreWorkspaceSession();
+  }, [restoreWorkspaceSession]);
 
   useEffect(() => {
     function handleBeforeUnload(): void {
@@ -64,7 +71,10 @@ export function EditorWorkspace() {
   );
 
   return (
-    <div className="page-enter mx-auto max-w-[1800px] p-4 sm:p-6">
+    <div
+      className="editor-background-accent page-enter mx-auto max-w-[1800px] p-4 sm:p-6"
+      data-workspace-accent="halftone"
+    >
       <div className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--gray-200)] pb-6 xl:flex-row xl:items-end">
         <div>
           <p className="micro-label">01 — editor</p>
@@ -118,8 +128,8 @@ export function EditorWorkspace() {
               crop={crop}
               cropMode={cropMode}
               referenceWidthInches={referencePhotoWidthInches}
-              cuttingGuides={paper.cuttingGuides}
-              sizeLabels={paper.sizeLabels}
+              cuttingGuides={paper.cuttingGuidesEnabled}
+              sizeLabels={paper.sizeLabelsEnabled}
               itemLabels={itemLabels}
             />
             <div className="font-technical flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">

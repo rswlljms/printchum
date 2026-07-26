@@ -1,8 +1,17 @@
 import type {
   LayoutResult,
   MeasurementUnit,
-  PaperOrientation,
 } from "@/lib/layout-engine/types";
+import type {
+  CustomPaperPreset,
+  PaperSettings,
+} from "@/lib/paper/types";
+
+export type {
+  CustomPaperPreset,
+  PaperPreset,
+  PaperSettings,
+} from "@/lib/paper/types";
 
 export type CropMode =
   | "keep-head-size"
@@ -54,25 +63,6 @@ export type PhotoSizeItemChanges = Partial<
   Omit<PhotoSizeItem, "id" | "presetId">
 >;
 
-export type PaperPreset = {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  unit: MeasurementUnit;
-};
-
-export type PaperSettings = PaperPreset & {
-  orientation: PaperOrientation;
-  margin: number;
-  horizontalSpacing: number;
-  verticalSpacing: number;
-  cuttingGuides: boolean;
-  sizeLabels: boolean;
-  allowPhotoRotation: boolean;
-  autoArrangeMode: "shelf";
-};
-
 export type ServiceSet = {
   id: string;
   name: string;
@@ -103,6 +93,7 @@ export type EditorState = {
   selectedServiceSetId: string | null;
   photoSizes: PhotoSizeItem[];
   paper: PaperSettings;
+  customPaperPresets: CustomPaperPreset[];
   nameplate: NameplateSettings;
   layoutMode: "auto" | "grid" | "manual";
   layoutResult: LayoutResult | null;

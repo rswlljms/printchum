@@ -147,6 +147,55 @@ select:focus-visible {
   opacity: 0.13;
 }
 
+.editor-background-accent {
+  position: relative;
+  isolation: isolate;
+}
+
+.editor-background-accent > * {
+  position: relative;
+  z-index: 1;
+}
+
+.editor-background-accent::before,
+.editor-background-accent::after {
+  position: absolute;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle,
+    var(--dot-color) 1px,
+    transparent 1.2px
+  );
+  background-size: 9px 9px;
+  opacity: 0.1;
+}
+
+.editor-background-accent::before {
+  top: 0;
+  right: 0;
+  width: min(42rem, 44vw);
+  height: 30rem;
+  mask-image: radial-gradient(
+    ellipse at 100% 0%,
+    black 0%,
+    transparent 70%
+  );
+}
+
+.editor-background-accent::after {
+  bottom: 0;
+  left: 0;
+  width: min(34rem, 38vw);
+  height: 28rem;
+  mask-image: radial-gradient(
+    ellipse at 0% 100%,
+    black 0%,
+    transparent 72%
+  );
+}
+
 .page-enter {
   animation: page-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

@@ -23,12 +23,11 @@ type NavigationItem = {
   href: string;
   icon: typeof LayoutDashboard;
   enabled: boolean;
-  primary?: boolean;
 };
 
 const navigation: readonly NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, enabled: true },
-  { label: "Create Layout", href: "/editor", icon: Sparkles, enabled: true, primary: true },
+  { label: "Create Layout", href: "/editor", icon: Sparkles, enabled: true },
   { label: "Projects", href: "/projects", icon: FolderOpen, enabled: false },
   { label: "Service Sets", href: "/service-sets", icon: SlidersHorizontal, enabled: false },
   { label: "Passport Presets", href: "/passport-presets", icon: FileImage, enabled: false },
@@ -58,13 +57,15 @@ export function SidebarContent() {
       <nav className="flex-1 space-y-1 p-3" aria-label="Main navigation">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(`${item.href}/`);
           const itemClass = cn(
             "font-technical flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-[11px] font-medium uppercase tracking-[0.07em]",
-            isActive && "bg-[var(--gray-100)] text-[var(--ink)]",
+            isActive &&
+              "bg-[var(--ink)] text-[var(--inverted-ink)]",
             !isActive && item.enabled && "text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)]",
             !item.enabled && "cursor-not-allowed text-[var(--gray-400)]",
-            item.primary && !isActive && "bg-[var(--ink)] text-[var(--inverted-ink)] hover:opacity-85",
           );
 
           if (!item.enabled) {
@@ -80,7 +81,13 @@ export function SidebarContent() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className={itemClass}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={itemClass}
+              aria-current={isActive ? "page" : undefined}
+              data-active={isActive}
+            >
               <Icon className="size-3.5" aria-hidden="true" />
               {isActive ? <span aria-hidden="true">→</span> : null}
               <span>{item.label}</span>

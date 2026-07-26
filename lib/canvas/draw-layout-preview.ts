@@ -27,6 +27,8 @@ export type DrawLayoutPreviewInput = {
   layoutResult: LayoutResult;
   activePageIndex: number;
   previewScale: number;
+  panOffsetX?: number;
+  panOffsetY?: number;
   photo: PreviewPhoto | null;
   cuttingGuides: boolean;
   sizeLabels: boolean;
@@ -353,6 +355,8 @@ export function drawLayoutPreview({
   layoutResult,
   activePageIndex,
   previewScale,
+  panOffsetX = 0,
+  panOffsetY = 0,
   photo,
   cuttingGuides,
   sizeLabels,
@@ -366,8 +370,12 @@ export function drawLayoutPreview({
   );
   const pixelsPerInch = Math.max(fitScale * previewScale, 1);
   const paper = {
-    x: (viewportWidth - paperWidthInches * pixelsPerInch) / 2,
-    y: (viewportHeight - paperHeightInches * pixelsPerInch) / 2,
+    x:
+      (viewportWidth - paperWidthInches * pixelsPerInch) / 2 +
+      panOffsetX,
+    y:
+      (viewportHeight - paperHeightInches * pixelsPerInch) / 2 +
+      panOffsetY,
     width: paperWidthInches * pixelsPerInch,
     height: paperHeightInches * pixelsPerInch,
   };

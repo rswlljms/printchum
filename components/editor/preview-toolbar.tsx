@@ -57,7 +57,8 @@ export function PreviewToolbar({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onScaleChange(previewScale - 0.1)}
+          onClick={() => onScaleChange(previewScale - 0.25)}
+          disabled={previewScale <= 0.5}
           aria-label="Zoom out"
         >
           <Minus className="size-4" />
@@ -68,7 +69,8 @@ export function PreviewToolbar({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onScaleChange(previewScale + 0.1)}
+          onClick={() => onScaleChange(previewScale + 0.25)}
+          disabled={previewScale >= 3}
           aria-label="Zoom in"
         >
           <Plus className="size-4" />

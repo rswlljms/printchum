@@ -22,6 +22,45 @@ type LayoutCanvasProps = {
   itemLabels: Readonly<Record<string, string>>;
 };
 
+type PreviewPanOffset = {
+  x: number;
+  y: number;
+};
+
+type PreviewDragState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  origin: PreviewPanOffset;
+};
+
+function clampPreviewPan(
+  offset: PreviewPanOffset,
+  viewportWidth: number,
+  viewportHeight: number,
+  paperWidthInches: number,
+  paperHeightInches: number,
+  previewScale: number,
+): PreviewPanOffset {
+  const padding = 32;
+  const fitScale = Math.min(
+    (viewportWidth - padding * 2) / paperWidthInches,
+    (viewportHeight - padding * 2) / paperHeightInches,
+  );
+  const paperWidth = paperWidthInches * fitScale * previewScale;
+  const paperHeight = paperHeightInches * fitScale * previewScale;
+  const maxX = Math.max((paperWidth - viewportWidth) / 2 + padding, 0);
+  const maxY = Math.max(
+    (paperHeight - viewportHeight) / 2 + padding,
+    0,
+  );
+
+  return {
+    x: Math.max(-maxX, Math.min(offset.x, maxX)),
+    y: Math.max(-maxY, Math.min(offset.y, maxY)),
+  };
+}
+
 export function LayoutCanvas(props: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +71,12 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     height: number;
   } | null>(null);
   const [imageRevision, setImageRevision] = useState(0);
+  const [panOffset, setPanOffset] = useState<PreviewPanOffset>({
+    x: 0,
+    y: 0,
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef<PreviewDragState | null>(null);
   const {
     paperWidthInches,
     paperHeightInches,
@@ -107,6 +152,14 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       }
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       const loadedPhoto = loadedPhotoRef.current;
+      const clampedPanOffset = clampPreviewPan(
+        panOffset,
+        viewportWidth,
+        viewportHeight,
+        paperWidthInches,
+        paperHeightInches,
+        previewScale,
+      );
       drawLayoutPreview({
         context,
         viewportWidth,
@@ -117,6 +170,8 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
         layoutResult,
         activePageIndex,
         previewScale,
+        panOffsetX: clampedPanOffset.x,
+        panOffsetY: clampedPanOffset.y,
         photo:
           loadedPhoto?.objectUrl === sourceObjectUrl
             ? {
@@ -164,24 +219,140 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     marginInches,
     paperHeightInches,
     paperWidthInches,
+    panOffset,
     previewScale,
     referenceWidthInches,
     sizeLabels,
     sourceObjectUrl,
   ]);
 
+  function updatePanOffset(
+    nextOffset: PreviewPanOffset,
+  ): void {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    setPanOffset(
+      clampPreviewPan(
+        nextOffset,
+        container.clientWidth,
+        container.clientHeight,
+        paperWidthInches,
+        paperHeightInches,
+        previewScale,
+      ),
+    );
+  }
+
+  function finishDragging(
+    pointerId: number,
+    target: HTMLCanvasElement,
+  ): void {
+    if (dragStateRef.current?.pointerId !== pointerId) {
+      return;
+    }
+    if (target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
+    dragStateRef.current = null;
+    setIsDragging(false);
+  }
+
   return (
     <div
       ref={containerRef}
-      className="halftone-field relative h-[clamp(520px,65vh,760px)] w-full overflow-hidden rounded-xl border border-[var(--gray-200)] bg-[var(--gray-100)]"
+      className="relative h-[clamp(520px,65vh,760px)] w-full overflow-hidden rounded-xl border border-[var(--gray-200)] bg-[var(--background)]"
+      data-preview-surface="plain"
     >
       {layoutResult && layoutResult.pages.length > 0 ? (
-        <canvas
-          ref={canvasRef}
-          className="block size-full"
-          role="img"
-          aria-label={`Print layout preview, page ${activePageIndex + 1} of ${layoutResult.pages.length}, ${layoutResult.placedItems} photos placed`}
-        />
+        <>
+          <canvas
+            ref={canvasRef}
+            className={`block size-full touch-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ink)] ${
+              previewScale > 1
+                ? isDragging
+                  ? "cursor-grabbing"
+                  : "cursor-grab"
+                : "cursor-default"
+            }`}
+            role="img"
+            tabIndex={previewScale > 1 ? 0 : -1}
+            data-paper-width-inches={paperWidthInches}
+            data-paper-height-inches={paperHeightInches}
+            data-cutting-guides={cuttingGuides}
+            data-size-labels={sizeLabels}
+            data-preview-scale={previewScale}
+            data-pan-x={panOffset.x}
+            data-pan-y={panOffset.y}
+            aria-label={`Print layout preview, page ${activePageIndex + 1} of ${layoutResult.pages.length}, ${layoutResult.placedItems} photos placed${previewScale > 1 ? ". Drag or use arrow keys to pan." : ""}`}
+            onPointerDown={(event) => {
+              if (previewScale <= 1) {
+                return;
+              }
+              event.currentTarget.setPointerCapture(event.pointerId);
+              dragStateRef.current = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                origin: panOffset,
+              };
+              setIsDragging(true);
+            }}
+            onPointerMove={(event) => {
+              const dragState = dragStateRef.current;
+              if (
+                !dragState ||
+                dragState.pointerId !== event.pointerId
+              ) {
+                return;
+              }
+              updatePanOffset({
+                x:
+                  dragState.origin.x +
+                  event.clientX -
+                  dragState.startX,
+                y:
+                  dragState.origin.y +
+                  event.clientY -
+                  dragState.startY,
+              });
+            }}
+            onPointerUp={(event) =>
+              finishDragging(event.pointerId, event.currentTarget)
+            }
+            onPointerCancel={(event) =>
+              finishDragging(event.pointerId, event.currentTarget)
+            }
+            onKeyDown={(event) => {
+              if (previewScale <= 1) {
+                return;
+              }
+              const step = event.shiftKey ? 48 : 20;
+              const movement = {
+                ArrowLeft: { x: step, y: 0 },
+                ArrowRight: { x: -step, y: 0 },
+                ArrowUp: { x: 0, y: step },
+                ArrowDown: { x: 0, y: -step },
+              }[event.key];
+              if (movement) {
+                event.preventDefault();
+                updatePanOffset({
+                  x: panOffset.x + movement.x,
+                  y: panOffset.y + movement.y,
+                });
+              } else if (event.key === "Home") {
+                event.preventDefault();
+                updatePanOffset({ x: 0, y: 0 });
+              }
+            }}
+          />
+          {previewScale > 1 ? (
+            <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--gray-300)] bg-[var(--background)] px-3 py-1.5 font-technical text-[9px] uppercase tracking-wider text-[var(--gray-600)] shadow-sm">
+              Drag to pan · Home to center
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="flex size-full items-center justify-center p-8 text-center">
           <div>

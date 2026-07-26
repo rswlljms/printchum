@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
 import { formatServiceSetPrice } from "@/features/editor/service-set-presentation";
+import {
+  fromInches,
+  roundMeasurementForDisplay,
+} from "@/lib/paper/conversions";
+import { calculatePrintableArea } from "@/lib/paper/printable-area";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function SummaryPanel() {
@@ -15,17 +20,38 @@ export function SummaryPanel() {
   const selectedServiceSetId = useEditorStore((state) => state.selectedServiceSetId);
   const selectedSizeCount = useEditorStore((state) => state.photoSizes.length);
   const selectedServiceSet = serviceSets.find((set) => set.id === selectedServiceSetId);
+  const printableArea = calculatePrintableArea(paper);
+  const paperWidth = roundMeasurementForDisplay(paper.width, paper.unit);
+  const paperHeight = roundMeasurementForDisplay(paper.height, paper.unit);
+  const printableWidth = roundMeasurementForDisplay(
+    fromInches(printableArea.printableWidthInches, paper.unit),
+    paper.unit,
+  );
+  const printableHeight = roundMeasurementForDisplay(
+    fromInches(printableArea.printableHeightInches, paper.unit),
+    paper.unit,
+  );
 
   const summaryRows = [
     ["Paper", paper.name],
+    ["Size", `${paperWidth} × ${paperHeight} ${paper.unit}`],
+    ["Unit", paper.unit],
     ["Orientation", paper.orientation],
+    ["Margin", `${roundMeasurementForDisplay(paper.margin, paper.unit)} ${paper.unit}`],
+    [
+      "Spacing",
+      `${roundMeasurementForDisplay(paper.horizontalSpacing, paper.unit)} × ${roundMeasurementForDisplay(paper.verticalSpacing, paper.unit)} ${paper.unit}`,
+    ],
+    ["Printable area", `${printableWidth} × ${printableHeight} ${paper.unit}`],
     ["Selected sizes", String(selectedSizeCount)],
     ["Total photos", String(layoutResult?.totalItems ?? 0)],
     ["Pages", String(layoutResult?.pages.length ?? 0)],
     ["Paper utilization", `${(layoutResult?.utilizationPercent ?? 0).toFixed(1)}%`],
     ["Unplaced", String(layoutResult?.unplacedItems.length ?? 0)],
-    ["Background", "Original"],
-    ["Nameplate", "Off"],
+    ["Cutting guides", paper.cuttingGuidesEnabled ? "On" : "Off"],
+    ["Size labels", paper.sizeLabelsEnabled ? "On" : "Off"],
+    ["Auto rotation", paper.allowPhotoRotation ? "On" : "Off"],
+    ["Arrange mode", paper.autoArrangeMode],
     ["Service set", selectedServiceSet?.name ?? "Custom"],
     ["Estimated price", selectedServiceSet ? formatServiceSetPrice(selectedServiceSet) : "—"],
     ["AI credit impact", "0 credits"],
@@ -33,7 +59,7 @@ export function SummaryPanel() {
 
   return (
     <aside
-      className="space-y-4 xl:sticky xl:top-[88px]"
+      className="space-y-4 xl:sticky xl:top-[88px] xl:max-h-[calc(100vh-104px)] xl:overflow-y-auto"
       aria-label="Layout summary"
     >
       <Card>

@@ -6,6 +6,7 @@ import {
 } from "@/features/editor/photo-sizes/conversions";
 import {
   createPhotoSizeItemFromPreset,
+  createSelectedPhotoSizeId,
   findPhotoSizePreset,
   photoSizePresets,
 } from "@/features/editor/photo-sizes/presets";
@@ -43,6 +44,16 @@ describe("photo-size preset catalog", () => {
     expect(first.id).not.toBe(second.id);
     expect(first.quantity).toBe(4);
     expect(first.presetId).toBe("2x2");
+  });
+
+  it("skips IDs restored from the workspace session", () => {
+    const currentId = createSelectedPhotoSizeId();
+    const currentSequence = Number(currentId.replace("photo-size-", ""));
+    const restoredNextId = `photo-size-${currentSequence + 1}`;
+    const nextId = createSelectedPhotoSizeId([restoredNextId]);
+
+    expect(nextId).not.toBe(restoredNextId);
+    expect(nextId).toBe(`photo-size-${currentSequence + 2}`);
   });
 });
 

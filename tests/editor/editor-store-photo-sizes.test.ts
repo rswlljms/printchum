@@ -107,8 +107,15 @@ describe("editor photo-size actions", () => {
     const state = useEditorStore.getState();
     expect(state.photoSizes[0].allowRotation).toBe(true);
     expect(state.photoSizes[0].nameplateEnabled).toBe(true);
-    expect(state.layoutResult?.unplacedItems).toHaveLength(0);
-    expect(state.layoutResult?.pages[0].items[0].rotation).toBe(90);
+    expect(state.layoutResult?.unplacedItems).toHaveLength(1);
+
+    useEditorStore.getState().setGlobalPhotoRotation(true);
+    const rotationEnabledState = useEditorStore.getState();
+    expect(rotationEnabledState.paper.allowPhotoRotation).toBe(true);
+    expect(rotationEnabledState.layoutResult?.unplacedItems).toHaveLength(0);
+    expect(rotationEnabledState.layoutResult?.pages[0].items[0].rotation).toBe(
+      90,
+    );
   });
 
   it("supports deterministic mixed-size and mixed-unit layouts", () => {

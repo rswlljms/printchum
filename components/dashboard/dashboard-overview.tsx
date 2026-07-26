@@ -16,7 +16,10 @@ const metricIcons = [Images, Sparkles, FileStack, Ruler] as const;
 
 export function DashboardOverview() {
   return (
-    <div className="page-enter mx-auto max-w-5xl space-y-14 p-4 sm:p-6">
+    <div
+      className="page-enter mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6 xl:space-y-10"
+      data-dashboard-layout="wide"
+    >
       <section className="halftone-field flex flex-col justify-between gap-6 border-b border-[var(--gray-200)] py-8 sm:flex-row sm:items-end">
         <div>
           <Badge className="mb-3">{mockAccount.plan} workspace</Badge>
@@ -41,13 +44,16 @@ export function DashboardOverview() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2" aria-label="Workspace metrics">
+      <section
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Workspace metrics"
+      >
         {dashboardMetrics.map((metric, index) => (
           <MetricCard key={metric.label} {...metric} icon={metricIcons[index]} />
         ))}
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+      <section className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

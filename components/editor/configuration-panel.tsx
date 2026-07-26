@@ -1,14 +1,13 @@
 "use client";
 
-import { ImagePlus, ScanLine, Scissors, Sparkles, Tags } from "lucide-react";
+import { ImagePlus, Sparkles } from "lucide-react";
 
+import { PaperSettingsPanel } from "@/components/editor/paper-settings-panel";
 import { PhotoCropper } from "@/components/editor/photo-cropper";
 import { PhotoSizesPanel } from "@/components/editor/photo-sizes-panel";
 import { PhotoUpload } from "@/components/editor/photo-upload";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { paperPresets } from "@/features/editor/mock-data/paper-presets";
 import { photoSizePresets } from "@/features/editor/photo-sizes/presets";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
 import {
@@ -19,13 +18,8 @@ import { cn } from "@/lib/class-names";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function ConfigurationPanel() {
-  const paper = useEditorStore((state) => state.paper);
   const selectedServiceSetId = useEditorStore((state) => state.selectedServiceSetId);
-  const selectPaperPreset = useEditorStore((state) => state.selectPaperPreset);
   const selectServiceSet = useEditorStore((state) => state.selectServiceSet);
-  const setPaperOrientation = useEditorStore((state) => state.setPaperOrientation);
-  const setCuttingGuides = useEditorStore((state) => state.setCuttingGuides);
-  const setSizeLabels = useEditorStore((state) => state.setSizeLabels);
 
   return (
     <aside className="space-y-4" aria-label="Layout configuration">
@@ -108,81 +102,7 @@ export function ConfigurationPanel() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ScanLine className="size-4 text-[var(--ink)]" />
-            <div>
-              <p className="micro-label">04 — output</p>
-              <h2 className="mt-1 font-semibold text-[var(--ink)]">Paper</h2>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            {paperPresets.filter((preset) => preset.id !== "custom").map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => selectPaperPreset(preset)}
-                className={cn(
-                  "font-technical rounded-lg border px-3 py-2 text-left text-[10px] uppercase tracking-wide",
-                  paper.id === preset.id
-                    ? "border-[var(--ink)] bg-[var(--ink)] font-medium text-[var(--inverted-ink)]"
-                    : "border-[var(--gray-200)] text-[var(--gray-600)] hover:bg-[var(--gray-50)]",
-                )}
-                aria-pressed={paper.id === preset.id}
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
-          <div>
-            <p className="micro-label mb-2">Orientation</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={paper.orientation === "portrait" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPaperOrientation("portrait")}
-                aria-pressed={paper.orientation === "portrait"}
-              >
-                Portrait
-              </Button>
-              <Button
-                variant={paper.orientation === "landscape" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPaperOrientation("landscape")}
-                aria-pressed={paper.orientation === "landscape"}
-              >
-                Landscape
-              </Button>
-            </div>
-          </div>
-          <div>
-            <p className="micro-label mb-2">Preview details</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={paper.cuttingGuides ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCuttingGuides(!paper.cuttingGuides)}
-                aria-pressed={paper.cuttingGuides}
-              >
-                <Scissors className="size-3.5" />
-                Guides
-              </Button>
-              <Button
-                variant={paper.sizeLabels ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSizeLabels(!paper.sizeLabels)}
-                aria-pressed={paper.sizeLabels}
-              >
-                <Tags className="size-3.5" />
-                Labels
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PaperSettingsPanel />
 
       <Card>
         <CardHeader>

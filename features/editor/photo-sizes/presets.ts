@@ -97,17 +97,24 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
 
 let selectedPhotoSizeSequence = 0;
 
-export function createSelectedPhotoSizeId(): string {
-  selectedPhotoSizeSequence += 1;
-  return `photo-size-${selectedPhotoSizeSequence}`;
+export function createSelectedPhotoSizeId(
+  existingIds: readonly string[] = [],
+): string {
+  let candidate: string;
+  do {
+    selectedPhotoSizeSequence += 1;
+    candidate = `photo-size-${selectedPhotoSizeSequence}`;
+  } while (existingIds.includes(candidate));
+  return candidate;
 }
 
 export function createPhotoSizeItemFromPreset(
   preset: PhotoSizePreset,
   quantity = preset.defaultQuantity,
+  existingIds: readonly string[] = [],
 ): PhotoSizeItem {
   return {
-    id: createSelectedPhotoSizeId(),
+    id: createSelectedPhotoSizeId(existingIds),
     presetId: preset.id,
     name: preset.name,
     width: preset.width,
@@ -121,10 +128,11 @@ export function createPhotoSizeItemFromPreset(
 
 export function createCustomPhotoSizeItem(
   item: NewPhotoSizeItem,
+  existingIds: readonly string[] = [],
 ): PhotoSizeItem {
   return {
     ...item,
-    id: createSelectedPhotoSizeId(),
+    id: createSelectedPhotoSizeId(existingIds),
   };
 }
 
