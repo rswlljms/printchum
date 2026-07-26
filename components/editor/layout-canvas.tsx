@@ -175,7 +175,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       ref={containerRef}
       className="halftone-field relative h-[clamp(520px,65vh,760px)] w-full overflow-hidden rounded-xl border border-[var(--gray-200)] bg-[var(--gray-100)]"
     >
-      {layoutResult ? (
+      {layoutResult && layoutResult.pages.length > 0 ? (
         <canvas
           ref={canvasRef}
           className="block size-full"
@@ -185,8 +185,16 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       ) : (
         <div className="flex size-full items-center justify-center p-8 text-center">
           <div>
-            <p className="font-medium text-[var(--gray-700)]">No layout available</p>
-            <p className="mt-1 text-sm text-[var(--gray-500)]">Adjust the settings to generate a preview.</p>
+            <p className="font-medium text-[var(--gray-700)]">
+              {layoutResult && layoutResult.totalItems > 0
+                ? "No photo sizes fit the selected paper"
+                : "Your layout preview will appear here"}
+            </p>
+            <p className="mt-1 text-sm text-[var(--gray-500)]">
+              {layoutResult && layoutResult.totalItems > 0
+                ? "Edit the selected dimensions or choose a larger paper preset."
+                : "Add a standard or custom photo size to generate a layout."}
+            </p>
           </div>
         </div>
       )}

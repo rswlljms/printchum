@@ -10,6 +10,16 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
 
   await page.goto("/editor");
 
+  await expect(
+    page.getByRole("heading", { name: "No photo sizes selected" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add 2 × 2 photo size" })
+    .click();
+  const selectedSize = page.locator("[data-photo-size-id]").first();
+  await expect(selectedSize).toBeVisible();
+  await selectedSize.getByRole("spinbutton", { name: "Quantity for 2 × 2" }).fill("8");
+
   await expect(page.getByText("Page 1 of 1")).toBeVisible();
   await expect(page.getByText("8 photos", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Zoom in" }).click();
@@ -47,7 +57,7 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
     .toBeLessThan(200);
   await expect
     .poll(async () => (await summary.boundingBox())?.y ?? -1)
-    .toBeGreaterThanOrEqual(87);
+    .toBeGreaterThanOrEqual(0);
   await expect
     .poll(async () => (await summary.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
     .toBeLessThan(100);

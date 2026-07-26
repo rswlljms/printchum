@@ -140,14 +140,6 @@ export function PhotoUpload() {
         </p>
       ) : null}
 
-      <div className="space-y-1 border-t border-[var(--gray-200)] pt-3">
-        <p className="text-xs leading-5 text-[var(--gray-600)]">
-          Your photo stays in this browser session and is not saved to PrintChum.
-        </p>
-        <p className="text-[11px] leading-5 text-[var(--gray-500)]">
-          Background removal will require an internet connection when the AI feature is connected.
-        </p>
-      </div>
     </div>
   );
 }

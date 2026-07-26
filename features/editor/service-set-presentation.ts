@@ -2,6 +2,7 @@ import type {
   PhotoSizePreset,
   ServiceSet,
 } from "@/features/editor/types";
+import { formatPhotoDimensions } from "@/features/editor/photo-sizes/conversions";
 
 export type ServiceSetItemSummary = {
   key: string;
@@ -32,7 +33,11 @@ export function summarizeServiceSetItems(
 
     return {
       key: `${item.sizePresetId}-${index}`,
-      text: `${item.quantity} ${pieceLabel} · ${preset?.name ?? "Unknown size"}`,
+      text: `${item.quantity} ${pieceLabel} · ${
+        preset
+          ? formatPhotoDimensions(preset.width, preset.height, preset.unit)
+          : "Unknown size"
+      }`,
     };
   });
 }

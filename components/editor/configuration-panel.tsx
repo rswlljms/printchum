@@ -3,12 +3,13 @@
 import { ImagePlus, ScanLine, Scissors, Sparkles, Tags } from "lucide-react";
 
 import { PhotoCropper } from "@/components/editor/photo-cropper";
+import { PhotoSizesPanel } from "@/components/editor/photo-sizes-panel";
 import { PhotoUpload } from "@/components/editor/photo-upload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { paperPresets } from "@/features/editor/mock-data/paper-presets";
-import { photoSizePresets } from "@/features/editor/mock-data/photo-size-presets";
+import { photoSizePresets } from "@/features/editor/photo-sizes/presets";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
 import {
   formatServiceSetPrice,
@@ -45,6 +46,8 @@ export function ConfigurationPanel() {
           </div>
         </CardContent>
       </Card>
+
+      <PhotoSizesPanel />
 
       <Card>
         <CardHeader>
@@ -110,7 +113,7 @@ export function ConfigurationPanel() {
           <div className="flex items-center gap-2">
             <ScanLine className="size-4 text-[var(--ink)]" />
             <div>
-              <p className="micro-label">03 — output</p>
+              <p className="micro-label">04 — output</p>
               <h2 className="mt-1 font-semibold text-[var(--ink)]">Paper</h2>
             </div>
           </div>
@@ -183,7 +186,7 @@ export function ConfigurationPanel() {
 
       <Card>
         <CardHeader>
-          <p className="micro-label">04 — background</p>
+          <p className="micro-label">05 — background</p>
           <h2 className="mt-1 font-semibold text-[var(--ink)]">Background</h2>
         </CardHeader>
         <CardContent>

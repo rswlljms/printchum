@@ -2,15 +2,21 @@
 
 import { create } from "zustand";
 
-import { photoSizePresets, createPhotoSizeItem } from "@/features/editor/mock-data/photo-size-presets";
 import { paperPresets } from "@/features/editor/mock-data/paper-presets";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
+import {
+  createCustomPhotoSizeItem,
+  createPhotoSizeItemFromPreset,
+  findPhotoSizePreset,
+} from "@/features/editor/photo-sizes/presets";
 import type {
   CropMode,
   CropState,
   EditorState,
+  NewPhotoSizeItem,
   PaperPreset,
   PhotoSizeItem,
+  PhotoSizeItemChanges,
 } from "@/features/editor/types";
 import { calculateLayout } from "@/lib/layout-engine/calculate-layout";
 import { convertMeasurement, toInches } from "@/lib/layout-engine/units";
@@ -30,6 +36,15 @@ type EditorActions = {
   setPaperOrientation: (orientation: "portrait" | "landscape") => void;
   setCuttingGuides: (enabled: boolean) => void;
   setSizeLabels: (enabled: boolean) => void;
+  addPhotoSizeFromPreset: (presetId: string) => void;
+  addCustomPhotoSize: (item: NewPhotoSizeItem) => void;
+  updatePhotoSize: (itemId: string, changes: PhotoSizeItemChanges) => void;
+  duplicatePhotoSize: (itemId: string) => void;
+  removePhotoSize: (itemId: string) => void;
+  setPhotoSizeQuantity: (itemId: string, quantity: number) => void;
+  setPhotoSizeRotation: (itemId: string, allowRotation: boolean) => void;
+  setPhotoSizeNameplate: (itemId: string, enabled: boolean) => void;
+  clearPhotoSizes: () => void;
   replacePhotoSizes: (photoSizes: PhotoSizeItem[]) => void;
   selectServiceSet: (serviceSetId: string) => void;
   setActivePage: (pageIndex: number) => void;
@@ -41,7 +56,6 @@ type EditorActions = {
 export type EditorStore = EditorState & EditorActions;
 
 const defaultPaperPreset = paperPresets[0];
-const defaultPhotoPreset = photoSizePresets.find((preset) => preset.id === "2x2") ?? photoSizePresets[0];
 
 function createDefaultCropState(): CropState {
   return {
@@ -70,7 +84,7 @@ function createInitialState(): EditorState {
     backgroundColor: "#ffffff",
     backgroundRemoved: false,
     selectedServiceSetId: null,
-    photoSizes: [createPhotoSizeItem(defaultPhotoPreset, 8)],
+    photoSizes: [],
     paper: {
       ...defaultPaperPreset,
       orientation: "portrait",
@@ -108,7 +122,7 @@ function calculateEditorLayout(state: EditorState): Pick<EditorState, "layoutRes
       horizontalSpacingInches: toInches(state.paper.horizontalSpacing, state.paper.unit),
       verticalSpacingInches: toInches(state.paper.verticalSpacing, state.paper.unit),
       items: state.photoSizes.map((item) => ({
-        id: item.instanceId,
+        id: item.id,
         widthInches: toInches(item.width, item.unit),
         heightInches: toInches(item.height, item.unit),
         quantity: item.quantity,
@@ -131,6 +145,40 @@ function calculateEditorLayout(state: EditorState): Pick<EditorState, "layoutRes
       activePageIndex: 0,
     };
   }
+}
+
+function updatePhotoSizesAndLayout(
+  state: EditorState,
+  photoSizes: PhotoSizeItem[],
+  selectedServiceSetId: string | null = null,
+): Partial<EditorState> {
+  const nextState: EditorState = {
+    ...state,
+    photoSizes,
+    selectedServiceSetId,
+    activePageIndex: 0,
+  };
+
+  return {
+    photoSizes,
+    selectedServiceSetId,
+    ...calculateEditorLayout(nextState),
+  };
+}
+
+function clampPhotoQuantity(quantity: number, fallback: number): number {
+  if (!Number.isFinite(quantity)) {
+    return fallback;
+  }
+  return Math.max(1, Math.min(Math.trunc(quantity), 500));
+}
+
+function createDuplicateName(name: string): string {
+  const suffix = " Copy";
+  if (name.endsWith(suffix)) {
+    return name;
+  }
+  return `${name.slice(0, 50 - suffix.length)}${suffix}`;
 }
 
 const initialState = createInitialState();
@@ -237,25 +285,121 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       paper: { ...state.paper, sizeLabels },
     }));
   },
-  replacePhotoSizes: (photoSizes) => {
+  addPhotoSizeFromPreset: (presetId) => {
+    const preset = findPhotoSizePreset(presetId);
+    if (!preset || preset.category === "custom") {
+      return;
+    }
+    set((state) =>
+      updatePhotoSizesAndLayout(state, [
+        ...state.photoSizes,
+        createPhotoSizeItemFromPreset(preset),
+      ]),
+    );
+  },
+  addCustomPhotoSize: (item) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(state, [
+        ...state.photoSizes,
+        createCustomPhotoSizeItem(item),
+      ]),
+    );
+  },
+  updatePhotoSize: (itemId, changes) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId ? { ...item, ...changes } : item,
+        ),
+      ),
+    );
+  },
+  duplicatePhotoSize: (itemId) => {
     set((state) => {
-      const nextState = { ...state, photoSizes, activePageIndex: 0 };
-      return { ...nextState, ...calculateEditorLayout(nextState) };
+      const sourceIndex = state.photoSizes.findIndex(
+        (item) => item.id === itemId,
+      );
+      if (sourceIndex < 0) {
+        return {};
+      }
+      const sourceItem = state.photoSizes[sourceIndex];
+      const duplicate = createCustomPhotoSizeItem({
+        presetId: sourceItem.presetId,
+        name: createDuplicateName(sourceItem.name),
+        width: sourceItem.width,
+        height: sourceItem.height,
+        unit: sourceItem.unit,
+        quantity: sourceItem.quantity,
+        allowRotation: sourceItem.allowRotation,
+        nameplateEnabled: sourceItem.nameplateEnabled,
+      });
+      const photoSizes = [...state.photoSizes];
+      photoSizes.splice(sourceIndex + 1, 0, duplicate);
+      return updatePhotoSizesAndLayout(state, photoSizes);
     });
+  },
+  removePhotoSize: (itemId) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.filter((item) => item.id !== itemId),
+      ),
+    );
+  },
+  setPhotoSizeQuantity: (itemId, quantity) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                quantity: clampPhotoQuantity(quantity, item.quantity),
+              }
+            : item,
+        ),
+      ),
+    );
+  },
+  setPhotoSizeRotation: (itemId, allowRotation) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId ? { ...item, allowRotation } : item,
+        ),
+      ),
+    );
+  },
+  setPhotoSizeNameplate: (itemId, nameplateEnabled) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId ? { ...item, nameplateEnabled } : item,
+        ),
+      ),
+    );
+  },
+  clearPhotoSizes: () => {
+    set((state) => updatePhotoSizesAndLayout(state, []));
+  },
+  replacePhotoSizes: (photoSizes) => {
+    set((state) => updatePhotoSizesAndLayout(state, photoSizes));
   },
   selectServiceSet: (serviceSetId) => {
     const serviceSet = serviceSets.find((item) => item.id === serviceSetId);
     if (!serviceSet) {
       return;
     }
-    const photoSizes = serviceSet.items.flatMap((item, index) => {
-      const preset = photoSizePresets.find((candidate) => candidate.id === item.sizePresetId);
+    const photoSizes = serviceSet.items.flatMap((item) => {
+      const preset = findPhotoSizePreset(item.sizePresetId);
       if (!preset) {
         return [];
       }
       return [{
-        ...createPhotoSizeItem(preset, item.quantity),
-        instanceId: `${preset.id}-selection-${index + 1}`,
+        ...createPhotoSizeItemFromPreset(preset, item.quantity),
       }];
     });
     set((state) => {

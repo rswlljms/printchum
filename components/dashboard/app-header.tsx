@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronDown, Cloud, HelpCircle, LogOut, UserRound } from "lucide-react";
+import { ChevronDown, HelpCircle, LogOut, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,10 +36,6 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <Badge variant="success" className="hidden gap-1.5 sm:inline-flex">
-          <Cloud className="status-pulse size-3" aria-hidden="true" />
-          Browser session ready
-        </Badge>
         <div className="hidden rounded-lg border border-[var(--gray-200)] px-3 py-1.5 text-right sm:block">
           <p className="micro-label">AI credits</p>
           <p className="font-display text-sm text-[var(--ink)]">{mockAccount.aiCreditsRemaining}</p>

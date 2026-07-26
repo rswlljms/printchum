@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { photoSizePresets } from "@/features/editor/mock-data/photo-size-presets";
+import { photoSizePresets } from "@/features/editor/photo-sizes/presets";
 import {
   formatServiceSetPrice,
   summarizeServiceSetItems,

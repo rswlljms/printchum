@@ -40,6 +40,9 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
   });
 
   await page.goto("/editor");
+  await page
+    .getByRole("button", { name: "Add 2 × 2 photo size" })
+    .click();
   await page.locator('input[type="file"]').setInputFiles({
     name: "local-test-photo.png",
     mimeType: "image/png",
@@ -68,12 +71,6 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
   expect(canvasDensity.bitmapWidth).toBeGreaterThanOrEqual(
     Math.floor(canvasDensity.cssWidth * canvasDensity.pixelRatio) - 1,
   );
-  await expect(
-    page.getByText(
-      "Your photo stays in this browser session and is not saved to PrintChum.",
-    ).first(),
-  ).toBeVisible();
-
   const zoom = page.getByRole("slider", { name: "Zoom" });
   const drawCountBeforeCropUpdate = await page.evaluate(
     () =>
@@ -92,7 +89,7 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
     )
     .toBeGreaterThan(drawCountBeforeCropUpdate);
 
-  await page.getByRole("button", { name: "Remove" }).click();
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("button", { name: "Choose photo" })).toBeVisible();
   await expect
     .poll(() =>

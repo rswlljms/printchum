@@ -7,10 +7,12 @@ import { ConfigurationPanel } from "@/components/editor/configuration-panel";
 import { LayoutCanvas } from "@/components/editor/layout-canvas";
 import { PreviewToolbar } from "@/components/editor/preview-toolbar";
 import { SummaryPanel } from "@/components/editor/summary-panel";
+import { UnplacedItemsWarning } from "@/components/editor/unplaced-items-warning";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { orientPaper } from "@/lib/layout-engine/paper-sizes";
 import { toInches } from "@/lib/layout-engine/units";
+import { formatPhotoDimensions } from "@/features/editor/photo-sizes/conversions";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function EditorWorkspace() {
@@ -49,7 +51,14 @@ export function EditorWorkspace() {
     : 1;
   const itemLabels = useMemo(
     () => Object.fromEntries(
-      photoSizes.map((photoSize) => [photoSize.instanceId, photoSize.name]),
+      photoSizes.map((photoSize) => [
+        photoSize.id,
+        `${photoSize.name} · ${formatPhotoDimensions(
+          photoSize.width,
+          photoSize.height,
+          photoSize.unit,
+        )}`,
+      ]),
     ),
     [photoSizes],
   );
@@ -85,6 +94,10 @@ export function EditorWorkspace() {
 
         <Card className="min-w-0 xl:sticky xl:top-[88px]">
           <CardContent className="space-y-4 p-4">
+            <UnplacedItemsWarning
+              layoutResult={layoutResult}
+              itemLabels={itemLabels}
+            />
             <PreviewToolbar
               activePageIndex={activePageIndex}
               pageCount={layoutResult?.pages.length ?? 0}

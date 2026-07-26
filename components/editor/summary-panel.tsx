@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, LockKeyhole } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -13,14 +13,17 @@ export function SummaryPanel() {
   const layoutResult = useEditorStore((state) => state.layoutResult);
   const layoutError = useEditorStore((state) => state.layoutError);
   const selectedServiceSetId = useEditorStore((state) => state.selectedServiceSetId);
+  const selectedSizeCount = useEditorStore((state) => state.photoSizes.length);
   const selectedServiceSet = serviceSets.find((set) => set.id === selectedServiceSetId);
 
   const summaryRows = [
     ["Paper", paper.name],
     ["Orientation", paper.orientation],
+    ["Selected sizes", String(selectedSizeCount)],
     ["Total photos", String(layoutResult?.totalItems ?? 0)],
     ["Pages", String(layoutResult?.pages.length ?? 0)],
     ["Paper utilization", `${(layoutResult?.utilizationPercent ?? 0).toFixed(1)}%`],
+    ["Unplaced", String(layoutResult?.unplacedItems.length ?? 0)],
     ["Background", "Original"],
     ["Nameplate", "Off"],
     ["Service set", selectedServiceSet?.name ?? "Custom"],
@@ -37,7 +40,7 @@ export function SummaryPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <p className="micro-label">05 — summary</p>
+              <p className="micro-label">06 — summary</p>
               <h2 className="mt-1 font-semibold text-[var(--ink)]">Layout summary</h2>
             </div>
             <Badge variant="success">
@@ -64,21 +67,6 @@ export function SummaryPanel() {
         </CardContent>
       </Card>
 
-      <Card className="border-[var(--gray-300)] bg-[var(--gray-50)]">
-        <CardContent className="p-4">
-          <div className="flex gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--ink)] text-[var(--inverted-ink)]">
-              <LockKeyhole className="size-4" />
-            </div>
-            <div>
-              <p className="font-technical text-[10px] font-medium uppercase tracking-wider text-[var(--ink)]">Privacy protected</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--gray-600)]">
-                Your photo stays in this browser session and is not saved to PrintChum.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </aside>
   );
 }
