@@ -19,17 +19,17 @@ export function SheetContent({
 }: ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/30" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] backdrop-blur-md" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[280px] border-r border-slate-200 bg-white p-0 shadow-xl",
+          "fixed inset-y-0 left-0 z-50 w-[280px] border-r border-[var(--gray-200)] bg-[var(--surface)] p-0 shadow-[0_40px_90px_-20px_rgba(0,0,0,0.35)]",
           className,
         )}
         {...props}
       >
         {children}
         <DialogPrimitive.Close
-          className="absolute right-3 top-3 rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+          className="absolute right-3 top-3 rounded-lg p-2 text-[var(--gray-500)] hover:bg-[var(--gray-100)]"
           aria-label="Close navigation"
         >
           <X className="size-4" />

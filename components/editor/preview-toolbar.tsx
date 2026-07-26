@@ -31,7 +31,7 @@ export function PreviewToolbar({
         >
           <ChevronLeft className="size-4" />
         </Button>
-        <span className="min-w-24 text-center text-sm font-medium text-slate-700">
+        <span className="font-technical min-w-24 text-center text-[10px] font-medium uppercase tracking-wider text-[var(--gray-700)]">
           Page {pageCount === 0 ? 0 : activePageIndex + 1} of {pageCount}
         </span>
         <Button
@@ -53,7 +53,7 @@ export function PreviewToolbar({
         >
           <Minus className="size-4" />
         </Button>
-        <span className="min-w-14 text-center text-xs font-medium text-slate-600">
+        <span className="font-technical min-w-14 text-center text-[10px] font-medium uppercase tracking-wider text-[var(--gray-600)]">
           {Math.round(previewScale * 100)}%
         </span>
         <Button

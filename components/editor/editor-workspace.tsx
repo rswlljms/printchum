@@ -28,11 +28,12 @@ export function EditorWorkspace() {
   );
 
   return (
-    <div className="mx-auto max-w-[1800px] p-4 sm:p-6">
-      <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+    <div className="page-enter mx-auto max-w-[1800px] p-4 sm:p-6">
+      <div className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--gray-200)] pb-6 xl:flex-row xl:items-end">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-950">Create Layout</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="micro-label">01 — editor</p>
+          <h2 className="font-display mt-2 text-4xl leading-none text-[var(--ink)]">Create Layout</h2>
+          <p className="mt-3 text-sm text-[var(--gray-500)]">
             Configure a print sheet and preview deterministic placement in real time.
           </p>
         </div>
@@ -72,7 +73,7 @@ export function EditorWorkspace() {
               activePageIndex={activePageIndex}
               previewScale={previewScale}
             />
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <div className="font-technical flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
               <span>Screen preview · physical output is not implemented yet</span>
               <span>
                 {orientedPaper.widthInches.toFixed(2)} × {orientedPaper.heightInches.toFixed(2)} in ·{" "}

@@ -18,7 +18,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg",
+          "z-50 min-w-52 rounded-2xl border border-[var(--gray-200)] bg-[var(--surface)] p-1.5 shadow-[0_40px_90px_-20px_rgba(0,0,0,0.35)]",
           className,
         )}
         {...props}
@@ -34,7 +34,7 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "flex cursor-default items-center rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:bg-slate-100",
+        "flex cursor-default items-center rounded-lg px-3 py-2 text-sm text-[var(--gray-700)] outline-none focus:bg-[var(--gray-100)]",
         className,
       )}
       {...props}
@@ -48,7 +48,7 @@ export function DropdownMenuLabel({
 }: ComponentProps<typeof DropdownMenuPrimitive.Label>) {
   return (
     <DropdownMenuPrimitive.Label
-      className={cn("px-3 py-2 text-xs text-slate-500", className)}
+      className={cn("px-3 py-2 text-xs text-[var(--gray-500)]", className)}
       {...props}
     />
   );

@@ -4,6 +4,7 @@ import { ChevronDown, Cloud, HelpCircle, LogOut, UserRound } from "lucide-react"
 import { usePathname } from "next/navigation";
 
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,43 +27,44 @@ export function AppHeader() {
   const title = pageTitles[pathname] ?? "PrintChum";
 
   return (
-    <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-[var(--gray-200)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-3">
         <MobileSidebar />
         <div>
-          <p className="text-xs font-medium text-slate-500">PrintChum workspace</p>
-          <h1 className="text-lg font-semibold tracking-tight text-slate-950">{title}</h1>
+          <p className="micro-label">PrintChum workspace</p>
+          <h1 className="font-display text-lg text-[var(--ink)]">{title}</h1>
         </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <Badge variant="success" className="hidden gap-1.5 sm:inline-flex">
-          <Cloud className="size-3" aria-hidden="true" />
+          <Cloud className="status-pulse size-3" aria-hidden="true" />
           Browser session ready
         </Badge>
-        <div className="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-right sm:block">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">AI credits</p>
-          <p className="text-sm font-semibold text-slate-900">{mockAccount.aiCreditsRemaining}</p>
+        <div className="hidden rounded-lg border border-[var(--gray-200)] px-3 py-1.5 text-right sm:block">
+          <p className="micro-label">AI credits</p>
+          <p className="font-display text-sm text-[var(--ink)]">{mockAccount.aiCreditsRemaining}</p>
         </div>
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100"
+              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-[var(--gray-100)]"
               aria-label="Open account menu"
             >
               <Avatar>
                 <AvatarFallback>SO</AvatarFallback>
               </Avatar>
-              <ChevronDown className="hidden size-3.5 text-slate-500 sm:block" />
+              <ChevronDown className="hidden size-3.5 text-[var(--gray-500)] sm:block" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              <span className="block font-medium text-slate-900">{mockAccount.name}</span>
+              <span className="block font-medium text-[var(--ink)]">{mockAccount.name}</span>
               <span className="block">{mockAccount.email}</span>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="my-1 h-px bg-slate-200" />
+            <DropdownMenuSeparator className="my-1 h-px bg-[var(--gray-200)]" />
             <DropdownMenuItem>
               <UserRound className="mr-2 size-4" /> Account placeholder
             </DropdownMenuItem>

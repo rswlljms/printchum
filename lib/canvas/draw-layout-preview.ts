@@ -12,7 +12,7 @@ export type DrawLayoutPreviewInput = {
   previewScale: number;
 };
 
-const FRAME_COLORS = ["#dbeafe", "#e0e7ff", "#e2e8f0", "#cffafe"];
+const FRAME_COLORS = ["#eeeeee", "#e4e4e4", "#dadada", "#f3f3f3"];
 
 function getFrameColor(sourceItemId: string): string {
   const codeTotal = [...sourceItemId].reduce((total, character) => total + character.charCodeAt(0), 0);
@@ -80,10 +80,10 @@ export function drawLayoutPreview({
 
     context.fillStyle = getFrameColor(item.sourceItemId);
     context.fillRect(x, y, width, height);
-    context.strokeStyle = "#60a5fa";
+    context.strokeStyle = "#737373";
     context.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1);
 
-    context.fillStyle = "#1e3a8a";
+    context.fillStyle = "#171717";
     context.font = `${Math.max(9, Math.min(12, width / 8))}px ui-sans-serif, system-ui`;
     context.textAlign = "center";
     context.textBaseline = "middle";

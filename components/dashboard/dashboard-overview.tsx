@@ -16,14 +16,14 @@ const metricIcons = [Images, Sparkles, FileStack, Ruler] as const;
 
 export function DashboardOverview() {
   return (
-    <div className="mx-auto max-w-[1480px] space-y-6 p-4 sm:p-6">
-      <section className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center">
+    <div className="page-enter mx-auto max-w-5xl space-y-14 p-4 sm:p-6">
+      <section className="halftone-field flex flex-col justify-between gap-6 border-b border-[var(--gray-200)] py-8 sm:flex-row sm:items-end">
         <div>
           <Badge className="mb-3">{mockAccount.plan} workspace</Badge>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h2 className="font-display text-4xl leading-none text-[var(--ink)]">
             Welcome back, Studio Owner
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          <p className="mt-4 max-w-2xl text-sm text-[var(--gray-600)]">
             Prepare accurate, print-ready photo sheets while keeping customer photos in the browser.
           </p>
         </div>
@@ -41,19 +41,20 @@ export function DashboardOverview() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Workspace metrics">
+      <section className="grid gap-4 sm:grid-cols-2" aria-label="Workspace metrics">
         {dashboardMetrics.map((metric, index) => (
           <MetricCard key={metric.label} {...metric} icon={metricIcons[index]} />
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+      <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-slate-950">Recent templates</h3>
-                <p className="mt-1 text-sm text-slate-500">Layout settings only—never customer photos.</p>
+                <p className="micro-label">01 — templates</p>
+                <h3 className="mt-1 font-semibold text-[var(--ink)]">Recent templates</h3>
+                <p className="mt-1 text-sm text-[var(--gray-500)]">Layout settings only—never customer photos.</p>
               </div>
               <Badge variant="secondary">{recentTemplates.length} recent</Badge>
             </div>
@@ -80,8 +81,9 @@ export function DashboardOverview() {
 
         <Card>
           <CardHeader>
-            <h3 className="font-semibold text-slate-950">Recently used presets</h3>
-            <p className="mt-1 text-sm text-slate-500">Mock preparation guides for Phase 1.</p>
+            <p className="micro-label">02 — presets</p>
+            <h3 className="mt-1 font-semibold text-[var(--ink)]">Recently used presets</h3>
+            <p className="mt-1 text-sm text-[var(--gray-500)]">Mock preparation guides for Phase 1.</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

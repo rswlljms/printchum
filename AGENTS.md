@@ -261,7 +261,7 @@ printchum/
 │   └── seed.sql
 ├── public/
 ├── AGENTS.md
-└── SKILLS.md
+└── SKILL.md
 ```
 
 Do not place unrelated logic in generic folders such as `utils/` unless the code is genuinely cross-domain.
@@ -1152,16 +1152,21 @@ Use a professional SaaS design.
 
 ## Visual Direction
 
-- Light mode first
-- White background
-- Soft gray surfaces
-- Minimal shadows
-- 12px border radius
-- Blue primary accent
-- Strong spacing hierarchy
+- Follow the `bryl-minimal` design language defined in `SKILL.md`
+- Strictly monochrome palette with no accent color
+- Support light, dark, and system themes using semantic color tokens
+- Default to the operating-system theme and persist explicit theme choices
+- Use Geist for UI, Geist Mono for technical labels, and Geist Pixel Square for display text
+- Use true black on white in light mode and off-white on near-black in dark mode
+- Use hairline neutral borders, rare filled surfaces, and soft low-alpha shadows
+- Use the 16px / 12px / 8px / 6px radius ladder
+- Use tiny uppercase monospace labels for metadata, status, tags, and navigation
+- Use a restrained halftone-dot motif in no more than one or two places per page
+- Use brief, ease-out motion and honor `prefers-reduced-motion`
+- Preserve strong spacing hierarchy and generous whitespace
 - Desktop-first editor
 - Responsive marketing pages
-- No gradients unless intentionally approved
+- No colorful or decorative gradients; subtle neutral surface fades are allowed
 - No glassmorphism
 - No neumorphism
 - No decorative clutter
@@ -1595,11 +1600,11 @@ Before implementing any feature:
 5. Confirm whether it requires entitlement checks.
 6. Confirm the physical measurement rules.
 7. Add or update tests.
-8. Keep the implementation consistent with `SKILLS.md`.
+8. Keep the implementation consistent with `SKILL.md`.
 
-When `AGENTS.md` and `SKILLS.md` overlap:
+When `AGENTS.md` and `SKILL.md` overlap:
 
 - `AGENTS.md` defines project architecture, product scope, privacy rules, and engineering constraints.
-- `SKILLS.md` defines reusable implementation practices and specialized workflows.
+- `SKILL.md` defines reusable implementation practices and specialized workflows.
 - A direct user instruction overrides both.
 - Security, privacy, billing, and data-integrity rules must not be weakened without explicit approval.

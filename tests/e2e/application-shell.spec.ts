@@ -14,5 +14,12 @@ test("redirects to the editor and shows the application shell", async ({ page })
   await expect(page.getByText("PrintChum", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create Layout" }).first()).toBeVisible();
   await expect(page.getByText("Browser session ready")).toBeVisible();
+
+  await page.getByRole("button", { name: "Theme: system" }).click();
+  await page.getByRole("menuitem", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
   expect(consoleErrors).toEqual([]);
 });

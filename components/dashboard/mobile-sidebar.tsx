@@ -20,7 +20,7 @@ export function MobileSidebar() {
           <Menu className="size-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="w-full">
         <SheetTitle className="sr-only">PrintChum navigation</SheetTitle>
         <SheetDescription className="sr-only">
           Navigate between PrintChum application areas.

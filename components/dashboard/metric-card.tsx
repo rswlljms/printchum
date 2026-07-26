@@ -14,13 +14,13 @@ export function MetricCard({ label, value, detail, icon: Icon }: MetricCardProps
     <Card>
       <CardContent className="p-5">
         <div className="mb-5 flex items-center justify-between">
-          <p className="text-sm font-medium text-slate-600">{label}</p>
-          <div className="flex size-9 items-center justify-center rounded-[10px] bg-blue-50 text-blue-600">
+          <p className="micro-label">{label}</p>
+          <div className="flex size-9 items-center justify-center rounded-lg border border-[var(--gray-200)] bg-[var(--gray-50)] text-[var(--ink)]">
             <Icon className="size-4" aria-hidden="true" />
           </div>
         </div>
-        <p className="text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-1 text-xs text-slate-500">{detail}</p>
+        <p className="font-display text-3xl text-[var(--ink)]">{value}</p>
+        <p className="font-technical mt-1 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">{detail}</p>
       </CardContent>
     </Card>
   );

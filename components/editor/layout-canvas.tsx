@@ -17,25 +17,35 @@ type LayoutCanvasProps = {
 export function LayoutCanvas(props: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const {
+    paperWidthInches,
+    paperHeightInches,
+    marginInches,
+    layoutResult,
+    activePageIndex,
+    previewScale,
+  } = props;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
-    const layoutResult = props.layoutResult;
     if (!canvas || !container || !layoutResult) {
       return;
     }
 
     let animationFrame = 0;
+    let viewportWidth = Math.max(Math.floor(container.clientWidth), 1);
+    let viewportHeight = Math.max(Math.floor(container.clientHeight), 1);
+
     const draw = () => {
-      const bounds = container.getBoundingClientRect();
-      const width = Math.max(Math.floor(bounds.width), 1);
-      const height = Math.max(Math.floor(bounds.height), 1);
       const pixelRatio = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(width * pixelRatio);
-      canvas.height = Math.floor(height * pixelRatio);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      const bitmapWidth = Math.floor(viewportWidth * pixelRatio);
+      const bitmapHeight = Math.floor(viewportHeight * pixelRatio);
+
+      if (canvas.width !== bitmapWidth || canvas.height !== bitmapHeight) {
+        canvas.width = bitmapWidth;
+        canvas.height = bitmapHeight;
+      }
 
       const context = canvas.getContext("2d");
       if (!context) {
@@ -44,47 +54,62 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       drawLayoutPreview({
         context,
-        viewportWidth: width,
-        viewportHeight: height,
-        paperWidthInches: props.paperWidthInches,
-        paperHeightInches: props.paperHeightInches,
-        marginInches: props.marginInches,
+        viewportWidth,
+        viewportHeight,
+        paperWidthInches,
+        paperHeightInches,
+        marginInches,
         layoutResult,
-        activePageIndex: props.activePageIndex,
-        previewScale: props.previewScale,
+        activePageIndex,
+        previewScale,
       });
     };
 
-    const scheduleDraw = () => {
+    const scheduleDraw = (width: number, height: number) => {
+      viewportWidth = Math.max(Math.floor(width), 1);
+      viewportHeight = Math.max(Math.floor(height), 1);
       cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(draw);
     };
-    const observer = new ResizeObserver(scheduleDraw);
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) {
+        scheduleDraw(entry.contentRect.width, entry.contentRect.height);
+      }
+    });
     observer.observe(container);
-    scheduleDraw();
+    scheduleDraw(container.clientWidth, container.clientHeight);
 
     return () => {
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
     };
-  }, [props]);
+  }, [
+    activePageIndex,
+    layoutResult,
+    marginInches,
+    paperHeightInches,
+    paperWidthInches,
+    previewScale,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className="relative min-h-[520px] w-full overflow-hidden rounded-xl bg-slate-200/60"
+      className="halftone-field relative h-[clamp(520px,65vh,760px)] w-full overflow-hidden rounded-xl border border-[var(--gray-200)] bg-[var(--gray-100)]"
     >
-      {props.layoutResult ? (
+      {layoutResult ? (
         <canvas
           ref={canvasRef}
+          className="block size-full"
           role="img"
-          aria-label={`Print layout preview, page ${props.activePageIndex + 1} of ${props.layoutResult.pages.length}`}
+          aria-label={`Print layout preview, page ${activePageIndex + 1} of ${layoutResult.pages.length}`}
         />
       ) : (
-        <div className="flex min-h-[520px] items-center justify-center p-8 text-center">
+        <div className="flex size-full items-center justify-center p-8 text-center">
           <div>
-            <p className="font-medium text-slate-700">No layout available</p>
-            <p className="mt-1 text-sm text-slate-500">Adjust the settings to generate a preview.</p>
+            <p className="font-medium text-[var(--gray-700)]">No layout available</p>
+            <p className="mt-1 text-sm text-[var(--gray-500)]">Adjust the settings to generate a preview.</p>
           </div>
         </div>
       )}

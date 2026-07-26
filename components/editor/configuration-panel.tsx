@@ -22,14 +22,17 @@ export function ConfigurationPanel() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ImagePlus className="size-4 text-blue-600" />
-            <h2 className="font-semibold text-slate-900">Photo</h2>
+            <ImagePlus className="size-4 text-[var(--ink)]" />
+            <div>
+              <p className="micro-label">01 — source</p>
+              <h2 className="mt-1 font-semibold text-[var(--ink)]">Photo</h2>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-[10px] border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-            <p className="text-sm font-medium text-slate-700">Photo upload arrives in Phase 2</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
+          <div className="rounded-xl border border-dashed border-[var(--gray-300)] bg-[var(--gray-50)] p-5 text-center">
+            <p className="text-sm font-medium text-[var(--gray-700)]">Photo upload arrives in Phase 2</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--gray-500)]">
               No customer photo is uploaded or stored in this foundation.
             </p>
           </div>
@@ -40,8 +43,11 @@ export function ConfigurationPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-blue-600" />
-              <h2 className="font-semibold text-slate-900">Service set</h2>
+              <Sparkles className="size-4 text-[var(--ink)]" />
+              <div>
+                <p className="micro-label">02 — package</p>
+                <h2 className="mt-1 font-semibold text-[var(--ink)]">Service set</h2>
+              </div>
             </div>
             <Badge variant="secondary">Mock data</Badge>
           </div>
@@ -54,15 +60,15 @@ export function ConfigurationPanel() {
                 type="button"
                 onClick={() => selectServiceSet(serviceSet.id)}
                 className={cn(
-                  "rounded-[10px] border px-2 py-2.5 text-left",
+                  "rounded-lg border px-2 py-2.5 text-left transition-transform duration-200 hover:-translate-y-px",
                   selectedServiceSetId === serviceSet.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200 bg-white hover:bg-slate-50",
+                    ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--inverted-ink)]"
+                    : "border-[var(--gray-200)] bg-[var(--surface)] hover:bg-[var(--gray-50)]",
                 )}
                 aria-pressed={selectedServiceSetId === serviceSet.id}
               >
-                <span className="block text-xs font-semibold text-slate-800">{serviceSet.name}</span>
-                <span className="mt-0.5 block text-[11px] text-slate-500">${serviceSet.price}</span>
+                <span className="font-technical block text-[10px] font-semibold uppercase tracking-wider">{serviceSet.name}</span>
+                <span className="font-technical mt-0.5 block text-[9px] opacity-65">${serviceSet.price}</span>
               </button>
             ))}
           </div>
@@ -72,8 +78,11 @@ export function ConfigurationPanel() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ScanLine className="size-4 text-blue-600" />
-            <h2 className="font-semibold text-slate-900">Paper</h2>
+            <ScanLine className="size-4 text-[var(--ink)]" />
+            <div>
+              <p className="micro-label">03 — output</p>
+              <h2 className="mt-1 font-semibold text-[var(--ink)]">Paper</h2>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -84,10 +93,10 @@ export function ConfigurationPanel() {
                 type="button"
                 onClick={() => selectPaperPreset(preset)}
                 className={cn(
-                  "rounded-[10px] border px-3 py-2 text-left text-xs",
+                  "font-technical rounded-lg border px-3 py-2 text-left text-[10px] uppercase tracking-wide",
                   paper.id === preset.id
-                    ? "border-blue-500 bg-blue-50 font-medium text-blue-800"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50",
+                    ? "border-[var(--ink)] bg-[var(--ink)] font-medium text-[var(--inverted-ink)]"
+                    : "border-[var(--gray-200)] text-[var(--gray-600)] hover:bg-[var(--gray-50)]",
                 )}
                 aria-pressed={paper.id === preset.id}
               >
@@ -96,7 +105,7 @@ export function ConfigurationPanel() {
             ))}
           </div>
           <div>
-            <p className="mb-2 text-xs font-medium text-slate-600">Orientation</p>
+            <p className="micro-label mb-2">Orientation</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant={paper.orientation === "portrait" ? "subtle" : "outline"}
@@ -121,13 +130,14 @@ export function ConfigurationPanel() {
 
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-slate-900">Background</h2>
+          <p className="micro-label">04 — background</p>
+          <h2 className="mt-1 font-semibold text-[var(--ink)]">Background</h2>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between rounded-[10px] bg-slate-50 p-3">
+          <div className="flex items-center justify-between rounded-xl border border-[var(--gray-200)] bg-[var(--gray-50)] p-3">
             <div>
-              <p className="text-sm font-medium text-slate-700">Original background</p>
-              <p className="text-xs text-slate-500">AI removal is not active.</p>
+              <p className="text-sm font-medium text-[var(--gray-700)]">Original background</p>
+              <p className="text-xs text-[var(--gray-500)]">AI removal is not active.</p>
             </div>
             <Badge variant="secondary">Placeholder</Badge>
           </div>
