@@ -70,7 +70,7 @@ export function SummaryPanel() {
             <div>
               <p className="font-technical text-[10px] font-medium uppercase tracking-wider text-[var(--ink)]">Privacy protected</p>
               <p className="mt-1 text-xs leading-5 text-[var(--gray-600)]">
-                Photo stored only in this browser session. No photo is present in Phase 1.
+                Your photo stays in this browser session and is not saved to PrintChum.
               </p>
             </div>
           </div>

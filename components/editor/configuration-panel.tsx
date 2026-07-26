@@ -2,6 +2,8 @@
 
 import { ImagePlus, ScanLine, Sparkles } from "lucide-react";
 
+import { PhotoCropper } from "@/components/editor/photo-cropper";
+import { PhotoUpload } from "@/components/editor/photo-upload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -30,11 +32,9 @@ export function ConfigurationPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-xl border border-dashed border-[var(--gray-300)] bg-[var(--gray-50)] p-5 text-center">
-            <p className="text-sm font-medium text-[var(--gray-700)]">Photo upload arrives in Phase 2</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--gray-500)]">
-              No customer photo is uploaded or stored in this foundation.
-            </p>
+          <PhotoUpload />
+          <div className="mt-5 border-t border-[var(--gray-200)] pt-5">
+            <PhotoCropper />
           </div>
         </CardContent>
       </Card>

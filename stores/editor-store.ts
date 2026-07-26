@@ -6,6 +6,8 @@ import { photoSizePresets, createPhotoSizeItem } from "@/features/editor/mock-da
 import { paperPresets } from "@/features/editor/mock-data/paper-presets";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
 import type {
+  CropMode,
+  CropState,
   EditorState,
   PaperPreset,
   PhotoSizeItem,
@@ -14,6 +16,16 @@ import { calculateLayout } from "@/lib/layout-engine/calculate-layout";
 import { convertMeasurement, toInches } from "@/lib/layout-engine/units";
 
 type EditorActions = {
+  replaceSourcePhoto: (file: File) => void;
+  removeSourcePhoto: () => void;
+  disposeSourcePhoto: () => void;
+  setNormalizedCrop: (
+    crop: Pick<CropState, "xPercent" | "yPercent" | "widthPercent" | "heightPercent">,
+  ) => void;
+  setCropZoom: (zoom: number) => void;
+  setCropRotation: (rotation: number) => void;
+  setCropMode: (mode: CropMode) => void;
+  resetCrop: () => void;
   selectPaperPreset: (preset: PaperPreset) => void;
   setPaperOrientation: (orientation: "portrait" | "landscape") => void;
   replacePhotoSizes: (photoSizes: PhotoSizeItem[]) => void;
@@ -29,18 +41,28 @@ export type EditorStore = EditorState & EditorActions;
 const defaultPaperPreset = paperPresets[0];
 const defaultPhotoPreset = photoSizePresets.find((preset) => preset.id === "2x2") ?? photoSizePresets[0];
 
+function createDefaultCropState(): CropState {
+  return {
+    xPercent: 0,
+    yPercent: 0,
+    widthPercent: 100,
+    heightPercent: 100,
+    zoom: 1,
+    rotation: 0,
+  };
+}
+
+function revokeObjectUrl(objectUrl: string | null): void {
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function createInitialState(): EditorState {
   return {
     sourceFile: null,
     sourceObjectUrl: null,
-    crop: {
-      xPercent: 0,
-      yPercent: 0,
-      widthPercent: 100,
-      heightPercent: 100,
-      zoom: 1,
-      rotation: 0,
-    },
+    crop: createDefaultCropState(),
     cropMode: "fill-frame",
     backgroundMode: "original",
     backgroundColor: "#ffffff",
@@ -114,6 +136,57 @@ const initialState = createInitialState();
 export const useEditorStore = create<EditorStore>((set, get) => ({
   ...initialState,
   ...calculateEditorLayout(initialState),
+  replaceSourcePhoto: (file) => {
+    const objectUrl = URL.createObjectURL(file);
+    const previousObjectUrl = get().sourceObjectUrl;
+    set({
+      sourceFile: file,
+      sourceObjectUrl: objectUrl,
+      crop: createDefaultCropState(),
+    });
+    revokeObjectUrl(previousObjectUrl);
+  },
+  removeSourcePhoto: () => {
+    const objectUrl = get().sourceObjectUrl;
+    set({
+      sourceFile: null,
+      sourceObjectUrl: null,
+      crop: createDefaultCropState(),
+    });
+    revokeObjectUrl(objectUrl);
+  },
+  disposeSourcePhoto: () => {
+    const objectUrl = get().sourceObjectUrl;
+    if (!objectUrl) {
+      return;
+    }
+    set({
+      sourceFile: null,
+      sourceObjectUrl: null,
+      crop: createDefaultCropState(),
+    });
+    revokeObjectUrl(objectUrl);
+  },
+  setNormalizedCrop: (normalizedCrop) => {
+    set((state) => ({
+      crop: {
+        ...state.crop,
+        ...normalizedCrop,
+      },
+    }));
+  },
+  setCropZoom: (zoom) => {
+    set((state) => ({
+      crop: { ...state.crop, zoom: Math.max(1, Math.min(zoom, 3)) },
+    }));
+  },
+  setCropRotation: (rotation) => {
+    set((state) => ({
+      crop: { ...state.crop, rotation: Math.max(-180, Math.min(rotation, 180)) },
+    }));
+  },
+  setCropMode: (cropMode) => set({ cropMode }),
+  resetCrop: () => set({ crop: createDefaultCropState() }),
   selectPaperPreset: (preset) => {
     set((state) => {
       const nextState = {
@@ -192,7 +265,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   setPreviewScale: (scale) => set({ previewScale: Math.max(0.5, Math.min(scale, 1.5)) }),
   recalculateLayout: () => set((state) => calculateEditorLayout(state)),
   resetEditor: () => {
+    const objectUrl = get().sourceObjectUrl;
     const nextState = createInitialState();
     set({ ...nextState, ...calculateEditorLayout(nextState) });
+    revokeObjectUrl(objectUrl);
   },
 }));

@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, Printer, RotateCcw } from "lucide-react";
+import { useEffect } from "react";
 
 import { ConfigurationPanel } from "@/components/editor/configuration-panel";
 import { LayoutCanvas } from "@/components/editor/layout-canvas";
@@ -20,6 +21,19 @@ export function EditorWorkspace() {
   const setActivePage = useEditorStore((state) => state.setActivePage);
   const setPreviewScale = useEditorStore((state) => state.setPreviewScale);
   const resetEditor = useEditorStore((state) => state.resetEditor);
+  const disposeSourcePhoto = useEditorStore((state) => state.disposeSourcePhoto);
+
+  useEffect(() => {
+    function handleBeforeUnload(): void {
+      disposeSourcePhoto();
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      disposeSourcePhoto();
+    };
+  }, [disposeSourcePhoto]);
 
   const orientedPaper = orientPaper(
     toInches(paper.width, paper.unit),
