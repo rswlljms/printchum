@@ -11,7 +11,21 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
   await page.goto("/editor");
 
   await expect(page.getByText("Page 1 of 1")).toBeVisible();
+  await expect(page.getByText("8 photos", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await expect(page.getByText("110%", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Fit page" }).click();
+  await expect(page.getByText("100%", { exact: true })).toBeVisible();
+
+  const guidesButton = page.getByRole("button", { name: "Guides" });
+  const labelsButton = page.getByRole("button", { name: "Labels" });
+  await expect(guidesButton).toHaveAttribute("aria-pressed", "true");
+  await expect(labelsButton).toHaveAttribute("aria-pressed", "false");
+  await labelsButton.click();
+  await expect(labelsButton).toHaveAttribute("aria-pressed", "true");
+
   const canvas = page.getByRole("img", { name: /Print layout preview/ });
+  const summary = page.getByRole("complementary", { name: "Layout summary" });
   const initialCanvasBox = await canvas.boundingBox();
   await page.waitForTimeout(500);
   const settledCanvasBox = await canvas.boundingBox();
@@ -23,5 +37,20 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
   await page.getByRole("button", { name: "Set E" }).click();
   await expect(page.getByText("Set E", { exact: true }).last()).toBeVisible();
   await expect(page.getByText("8", { exact: true }).last()).toBeVisible();
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect
+    .poll(async () => (await canvas.boundingBox())?.y ?? -1)
+    .toBeGreaterThan(100);
+  await expect
+    .poll(async () => (await canvas.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
+    .toBeLessThan(200);
+  await expect
+    .poll(async () => (await summary.boundingBox())?.y ?? -1)
+    .toBeGreaterThanOrEqual(87);
+  await expect
+    .poll(async () => (await summary.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
+    .toBeLessThan(100);
+
   expect(consoleErrors).toEqual([]);
 });

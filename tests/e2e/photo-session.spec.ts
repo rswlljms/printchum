@@ -5,6 +5,8 @@ const onePixelPng = Buffer.from(
   "base64",
 );
 
+test.use({ deviceScaleFactor: 2 });
+
 test("keeps photo editing local and cleans up the object URL", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -14,8 +16,22 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
   });
 
   await page.addInitScript(() => {
-    const sessionWindow = window as typeof window & { revokedPhotoUrls: number };
+    const sessionWindow = window as typeof window & {
+      canvasPhotoDraws: number;
+      revokedPhotoUrls: number;
+    };
     const originalRevokeObjectUrl = URL.revokeObjectURL.bind(URL);
+    const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = new Proxy(
+      originalDrawImage,
+      {
+        apply(target, thisArgument, argumentsList) {
+          sessionWindow.canvasPhotoDraws += 1;
+          return Reflect.apply(target, thisArgument, argumentsList);
+        },
+      },
+    );
+    sessionWindow.canvasPhotoDraws = 0;
     sessionWindow.revokedPhotoUrls = 0;
     URL.revokeObjectURL = (objectUrl: string): void => {
       sessionWindow.revokedPhotoUrls += 1;
@@ -32,6 +48,26 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
 
   await expect(page.getByAltText("Selected photo preview")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Frame the photo" })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { canvasPhotoDraws: number })
+            .canvasPhotoDraws,
+      ),
+    )
+    .toBeGreaterThan(0);
+  const canvasDensity = await page
+    .getByRole("img", { name: /Print layout preview/ })
+    .evaluate((canvas: HTMLCanvasElement) => ({
+      bitmapWidth: canvas.width,
+      cssWidth: canvas.getBoundingClientRect().width,
+      pixelRatio: window.devicePixelRatio,
+    }));
+  expect(canvasDensity.pixelRatio).toBe(2);
+  expect(canvasDensity.bitmapWidth).toBeGreaterThanOrEqual(
+    Math.floor(canvasDensity.cssWidth * canvasDensity.pixelRatio) - 1,
+  );
   await expect(
     page.getByText(
       "Your photo stays in this browser session and is not saved to PrintChum.",
@@ -39,8 +75,22 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
   ).toBeVisible();
 
   const zoom = page.getByRole("slider", { name: "Zoom" });
+  const drawCountBeforeCropUpdate = await page.evaluate(
+    () =>
+      (window as typeof window & { canvasPhotoDraws: number })
+        .canvasPhotoDraws,
+  );
   await zoom.fill("1.5");
   await expect(zoom).toHaveValue("1.5");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { canvasPhotoDraws: number })
+            .canvasPhotoDraws,
+      ),
+    )
+    .toBeGreaterThan(drawCountBeforeCropUpdate);
 
   await page.getByRole("button", { name: "Remove" }).click();
   await expect(page.getByRole("button", { name: "Choose photo" })).toBeVisible();

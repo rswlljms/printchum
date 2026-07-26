@@ -8,6 +8,8 @@ type PreviewToolbarProps = {
   activePageIndex: number;
   pageCount: number;
   previewScale: number;
+  totalItems: number;
+  utilizationPercent: number;
   onPageChange: (page: number) => void;
   onScaleChange: (scale: number) => void;
 };
@@ -16,12 +18,19 @@ export function PreviewToolbar({
   activePageIndex,
   pageCount,
   previewScale,
+  totalItems,
+  utilizationPercent,
   onPageChange,
   onScaleChange,
 }: PreviewToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="font-technical flex items-center gap-3 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
+          <span>{totalItems} photos</span>
+          <span>{utilizationPercent.toFixed(1)}% used</span>
+        </div>
+        <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="icon"
@@ -68,6 +77,7 @@ export function PreviewToolbar({
           <Maximize2 className="size-3.5" />
           Fit page
         </Button>
+        </div>
       </div>
     </div>
   );

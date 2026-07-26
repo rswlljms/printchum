@@ -28,6 +28,8 @@ type EditorActions = {
   resetCrop: () => void;
   selectPaperPreset: (preset: PaperPreset) => void;
   setPaperOrientation: (orientation: "portrait" | "landscape") => void;
+  setCuttingGuides: (enabled: boolean) => void;
+  setSizeLabels: (enabled: boolean) => void;
   replacePhotoSizes: (photoSizes: PhotoSizeItem[]) => void;
   selectServiceSet: (serviceSetId: string) => void;
   setActivePage: (pageIndex: number) => void;
@@ -224,6 +226,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       };
       return { ...nextState, ...calculateEditorLayout(nextState) };
     });
+  },
+  setCuttingGuides: (cuttingGuides) => {
+    set((state) => ({
+      paper: { ...state.paper, cuttingGuides },
+    }));
+  },
+  setSizeLabels: (sizeLabels) => {
+    set((state) => ({
+      paper: { ...state.paper, sizeLabels },
+    }));
   },
   replacePhotoSizes: (photoSizes) => {
     set((state) => {

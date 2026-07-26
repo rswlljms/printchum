@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { drawLayoutPreview } from "@/lib/canvas/draw-layout-preview";
+import type { CropMode, CropState } from "@/features/editor/types";
 import type { LayoutResult } from "@/lib/layout-engine/types";
 
 type LayoutCanvasProps = {
@@ -12,11 +13,25 @@ type LayoutCanvasProps = {
   layoutResult: LayoutResult | null;
   activePageIndex: number;
   previewScale: number;
+  sourceObjectUrl: string | null;
+  crop: CropState;
+  cropMode: CropMode;
+  referenceWidthInches: number;
+  cuttingGuides: boolean;
+  sizeLabels: boolean;
+  itemLabels: Readonly<Record<string, string>>;
 };
 
 export function LayoutCanvas(props: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const loadedPhotoRef = useRef<{
+    objectUrl: string;
+    image: HTMLImageElement;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [imageRevision, setImageRevision] = useState(0);
   const {
     paperWidthInches,
     paperHeightInches,
@@ -24,7 +39,46 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     layoutResult,
     activePageIndex,
     previewScale,
+    sourceObjectUrl,
+    crop,
+    cropMode,
+    referenceWidthInches,
+    cuttingGuides,
+    sizeLabels,
+    itemLabels,
   } = props;
+
+  useEffect(() => {
+    if (!sourceObjectUrl) {
+      loadedPhotoRef.current = null;
+      return;
+    }
+
+    let isActive = true;
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      if (isActive) {
+        loadedPhotoRef.current = {
+          objectUrl: sourceObjectUrl,
+          image,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        };
+        setImageRevision((revision) => revision + 1);
+      }
+    };
+    image.src = sourceObjectUrl;
+
+    return () => {
+      isActive = false;
+      if (loadedPhotoRef.current?.objectUrl === sourceObjectUrl) {
+        loadedPhotoRef.current = null;
+      }
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [sourceObjectUrl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -52,6 +106,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
         return;
       }
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      const loadedPhoto = loadedPhotoRef.current;
       drawLayoutPreview({
         context,
         viewportWidth,
@@ -62,6 +117,20 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
         layoutResult,
         activePageIndex,
         previewScale,
+        photo:
+          loadedPhoto?.objectUrl === sourceObjectUrl
+            ? {
+                image: loadedPhoto.image,
+                sourceWidth: loadedPhoto.width,
+                sourceHeight: loadedPhoto.height,
+                crop,
+                cropMode,
+                referenceWidthInches,
+              }
+            : null,
+        cuttingGuides,
+        sizeLabels,
+        itemLabels,
       });
     };
 
@@ -86,11 +155,19 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     };
   }, [
     activePageIndex,
+    crop,
+    cropMode,
+    cuttingGuides,
+    imageRevision,
+    itemLabels,
     layoutResult,
     marginInches,
     paperHeightInches,
     paperWidthInches,
     previewScale,
+    referenceWidthInches,
+    sizeLabels,
+    sourceObjectUrl,
   ]);
 
   return (
@@ -103,7 +180,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
           ref={canvasRef}
           className="block size-full"
           role="img"
-          aria-label={`Print layout preview, page ${activePageIndex + 1} of ${layoutResult.pages.length}`}
+          aria-label={`Print layout preview, page ${activePageIndex + 1} of ${layoutResult.pages.length}, ${layoutResult.placedItems} photos placed`}
         />
       ) : (
         <div className="flex size-full items-center justify-center p-8 text-center">

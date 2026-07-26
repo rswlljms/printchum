@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Printer, RotateCcw } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { ConfigurationPanel } from "@/components/editor/configuration-panel";
 import { LayoutCanvas } from "@/components/editor/layout-canvas";
@@ -18,6 +18,10 @@ export function EditorWorkspace() {
   const layoutResult = useEditorStore((state) => state.layoutResult);
   const activePageIndex = useEditorStore((state) => state.activePageIndex);
   const previewScale = useEditorStore((state) => state.previewScale);
+  const sourceObjectUrl = useEditorStore((state) => state.sourceObjectUrl);
+  const crop = useEditorStore((state) => state.crop);
+  const cropMode = useEditorStore((state) => state.cropMode);
+  const photoSizes = useEditorStore((state) => state.photoSizes);
   const setActivePage = useEditorStore((state) => state.setActivePage);
   const setPreviewScale = useEditorStore((state) => state.setPreviewScale);
   const resetEditor = useEditorStore((state) => state.resetEditor);
@@ -39,6 +43,15 @@ export function EditorWorkspace() {
     toInches(paper.width, paper.unit),
     toInches(paper.height, paper.unit),
     paper.orientation,
+  );
+  const referencePhotoWidthInches = photoSizes[0]
+    ? toInches(photoSizes[0].width, photoSizes[0].unit)
+    : 1;
+  const itemLabels = useMemo(
+    () => Object.fromEntries(
+      photoSizes.map((photoSize) => [photoSize.instanceId, photoSize.name]),
+    ),
+    [photoSizes],
   );
 
   return (
@@ -70,12 +83,14 @@ export function EditorWorkspace() {
       <div className="grid items-start gap-5 xl:grid-cols-[320px_minmax(480px,1fr)_280px]">
         <ConfigurationPanel />
 
-        <Card className="min-w-0">
+        <Card className="min-w-0 xl:sticky xl:top-[88px]">
           <CardContent className="space-y-4 p-4">
             <PreviewToolbar
               activePageIndex={activePageIndex}
               pageCount={layoutResult?.pages.length ?? 0}
               previewScale={previewScale}
+              totalItems={layoutResult?.totalItems ?? 0}
+              utilizationPercent={layoutResult?.utilizationPercent ?? 0}
               onPageChange={setActivePage}
               onScaleChange={setPreviewScale}
             />
@@ -86,6 +101,13 @@ export function EditorWorkspace() {
               layoutResult={layoutResult}
               activePageIndex={activePageIndex}
               previewScale={previewScale}
+              sourceObjectUrl={sourceObjectUrl}
+              crop={crop}
+              cropMode={cropMode}
+              referenceWidthInches={referencePhotoWidthInches}
+              cuttingGuides={paper.cuttingGuides}
+              sizeLabels={paper.sizeLabels}
+              itemLabels={itemLabels}
             />
             <div className="font-technical flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
               <span>Screen preview · physical output is not implemented yet</span>

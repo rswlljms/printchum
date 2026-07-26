@@ -57,7 +57,7 @@ export type ServiceSet = {
   name: string;
   description?: string;
   price: number;
-  currency: "USD";
+  currency: "PHP";
   items: Array<{
     sizePresetId: string;
     quantity: number;

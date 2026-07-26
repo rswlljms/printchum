@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, ScanLine, Sparkles } from "lucide-react";
+import { ImagePlus, ScanLine, Scissors, Sparkles, Tags } from "lucide-react";
 
 import { PhotoCropper } from "@/components/editor/photo-cropper";
 import { PhotoUpload } from "@/components/editor/photo-upload";
@@ -8,7 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { paperPresets } from "@/features/editor/mock-data/paper-presets";
+import { photoSizePresets } from "@/features/editor/mock-data/photo-size-presets";
 import { serviceSets } from "@/features/editor/mock-data/service-sets";
+import {
+  formatServiceSetPrice,
+  summarizeServiceSetItems,
+} from "@/features/editor/service-set-presentation";
 import { cn } from "@/lib/class-names";
 import { useEditorStore } from "@/stores/editor-store";
 
@@ -18,6 +23,8 @@ export function ConfigurationPanel() {
   const selectPaperPreset = useEditorStore((state) => state.selectPaperPreset);
   const selectServiceSet = useEditorStore((state) => state.selectServiceSet);
   const setPaperOrientation = useEditorStore((state) => state.setPaperOrientation);
+  const setCuttingGuides = useEditorStore((state) => state.setCuttingGuides);
+  const setSizeLabels = useEditorStore((state) => state.setSizeLabels);
 
   return (
     <aside className="space-y-4" aria-label="Layout configuration">
@@ -49,28 +56,51 @@ export function ConfigurationPanel() {
                 <h2 className="mt-1 font-semibold text-[var(--ink)]">Service set</h2>
               </div>
             </div>
-            <Badge variant="secondary">Mock data</Badge>
+            <span className="font-technical text-[9px] uppercase tracking-wider text-[var(--gray-500)]">
+              Tap to apply
+            </span>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-2">
-            {serviceSets.map((serviceSet) => (
-              <button
-                key={serviceSet.id}
-                type="button"
-                onClick={() => selectServiceSet(serviceSet.id)}
-                className={cn(
-                  "rounded-lg border px-2 py-2.5 text-left transition-transform duration-200 hover:-translate-y-px",
-                  selectedServiceSetId === serviceSet.id
-                    ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--inverted-ink)]"
-                    : "border-[var(--gray-200)] bg-[var(--surface)] hover:bg-[var(--gray-50)]",
-                )}
-                aria-pressed={selectedServiceSetId === serviceSet.id}
-              >
-                <span className="font-technical block text-[10px] font-semibold uppercase tracking-wider">{serviceSet.name}</span>
-                <span className="font-technical mt-0.5 block text-[9px] opacity-65">${serviceSet.price}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-2">
+            {serviceSets.map((serviceSet) => {
+              const itemSummaries = summarizeServiceSetItems(
+                serviceSet,
+                photoSizePresets,
+              );
+
+              return (
+                <button
+                  key={serviceSet.id}
+                  type="button"
+                  onClick={() => selectServiceSet(serviceSet.id)}
+                  className={cn(
+                    "min-h-24 rounded-xl border px-3 py-3 text-left transition-transform duration-200 hover:-translate-y-px",
+                    selectedServiceSetId === serviceSet.id
+                      ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--inverted-ink)]"
+                      : "border-[var(--gray-200)] bg-[var(--surface)] hover:bg-[var(--gray-50)]",
+                  )}
+                  aria-pressed={selectedServiceSetId === serviceSet.id}
+                >
+                  <span className="font-technical block text-[10px] font-semibold uppercase tracking-wider">
+                    {serviceSet.name}
+                  </span>
+                  <span className="mt-1 block text-xs font-semibold">
+                    {formatServiceSetPrice(serviceSet)}
+                  </span>
+                  <span className="mt-1.5 block space-y-0.5">
+                    {itemSummaries.map((summary) => (
+                      <span
+                        key={summary.key}
+                        className="font-technical block text-[9px] leading-4 opacity-70"
+                      >
+                        {summary.text}
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -108,7 +138,7 @@ export function ConfigurationPanel() {
             <p className="micro-label mb-2">Orientation</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
-                variant={paper.orientation === "portrait" ? "subtle" : "outline"}
+                variant={paper.orientation === "portrait" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setPaperOrientation("portrait")}
                 aria-pressed={paper.orientation === "portrait"}
@@ -116,12 +146,35 @@ export function ConfigurationPanel() {
                 Portrait
               </Button>
               <Button
-                variant={paper.orientation === "landscape" ? "subtle" : "outline"}
+                variant={paper.orientation === "landscape" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setPaperOrientation("landscape")}
                 aria-pressed={paper.orientation === "landscape"}
               >
                 Landscape
+              </Button>
+            </div>
+          </div>
+          <div>
+            <p className="micro-label mb-2">Preview details</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={paper.cuttingGuides ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCuttingGuides(!paper.cuttingGuides)}
+                aria-pressed={paper.cuttingGuides}
+              >
+                <Scissors className="size-3.5" />
+                Guides
+              </Button>
+              <Button
+                variant={paper.sizeLabels ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSizeLabels(!paper.sizeLabels)}
+                aria-pressed={paper.sizeLabels}
+              >
+                <Tags className="size-3.5" />
+                Labels
               </Button>
             </div>
           </div>
