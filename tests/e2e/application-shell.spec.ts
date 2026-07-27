@@ -11,12 +11,11 @@ test("redirects to the single-page editor and shows its compact shell", async ({
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/editor$/);
-  await expect(page.getByText("PrintChum workspace", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "PrintChum Workspace" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create Layout" }).first()).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Theme: system" }).click();
-  await page.getByRole("menuitem", { name: "Dark" }).click();
+  await page.getByRole("button", { name: "Use dark theme" }).click();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.reload();
   await expect(page.locator("html")).toHaveClass(/dark/);

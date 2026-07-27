@@ -1,22 +1,15 @@
 "use client";
 
-import { Check, Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import type { MouseEvent } from "react";
 
 type ThemePreference = "light" | "dark" | "system";
 
 const themeOptions = [
+  { value: "system", label: "System", icon: Monitor },
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
 ] as const;
 
 function applyTheme(preference: ThemePreference): void {
@@ -58,45 +51,85 @@ export function ThemeToggle() {
     };
   }, []);
 
-  const selectTheme = (nextPreference: ThemePreference) => {
-    window.localStorage.setItem("printchum-theme", nextPreference);
-    setPreference(nextPreference);
-    applyTheme(nextPreference);
+  const selectTheme = (
+    nextPreference: ThemePreference,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => {
+    if (nextPreference === preference) {
+      return;
+    }
+
+    const updateTheme = () => {
+      window.localStorage.setItem("printchum-theme", nextPreference);
+      setPreference(nextPreference);
+      applyTheme(nextPreference);
+    };
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (!document.startViewTransition || prefersReducedMotion) {
+      updateTheme();
+      return;
+    }
+
+    const buttonBounds = event.currentTarget.getBoundingClientRect();
+    const originX = buttonBounds.left + buttonBounds.width / 2;
+    const originY = buttonBounds.top + buttonBounds.height / 2;
+    const endRadius = Math.hypot(
+      Math.max(originX, window.innerWidth - originX),
+      Math.max(originY, window.innerHeight - originY),
+    );
+
+    document.documentElement.setAttribute("data-theme-transition", "active");
+    const transition = document.startViewTransition(updateTheme);
+
+    void transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0 at ${originX}px ${originY}px)`,
+            `circle(${endRadius}px at ${originX}px ${originY}px)`,
+          ],
+        },
+        {
+          duration: 540,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+          pseudoElement: "::view-transition-new(root)",
+        },
+      );
+    });
+
+    void transition.finished.finally(() => {
+      document.documentElement.removeAttribute("data-theme-transition");
+    });
   };
 
-  const ActiveIcon =
-    themeOptions.find((option) => option.value === preference)?.icon ?? Monitor;
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Theme: ${preference}`}
-          title={`Theme: ${preference}`}
-        >
-          <ActiveIcon className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {themeOptions.map((option) => {
-          const Icon = option.icon;
-          return (
-            <DropdownMenuItem
-              key={option.value}
-              onSelect={() => selectTheme(option.value)}
-              className="font-technical text-xs uppercase tracking-wider"
-            >
-              <Icon className="mr-2 size-4" />
-              {option.label}
-              {preference === option.value ? (
-                <Check className="ml-auto size-3.5" />
-              ) : null}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div
+      className="flex items-center rounded-full border border-[var(--gray-300)] bg-[var(--gray-50)] p-0.5"
+      role="group"
+      aria-label="Theme preference"
+    >
+      {themeOptions.map((option) => {
+        const Icon = option.icon;
+        const isSelected = preference === option.value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={(event) => selectTheme(option.value, event)}
+            className="flex size-6 items-center justify-center rounded-full text-[var(--gray-500)] transition-colors duration-200 hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--background)] data-[selected=true]:bg-[var(--gray-200)] data-[selected=true]:text-[var(--ink)]"
+            data-selected={isSelected}
+            aria-label={`Use ${option.label.toLowerCase()} theme`}
+            aria-pressed={isSelected}
+            title={option.label}
+          >
+            <Icon className="size-3.5" aria-hidden="true" />
+          </button>
+        );
+      })}
+    </div>
   );
 }
