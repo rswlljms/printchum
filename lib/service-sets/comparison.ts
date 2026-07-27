@@ -13,7 +13,6 @@ export function createServiceSetConfigurationFingerprint(
   const photoSizes = configuration.photoSizes.map((item) =>
     [
       item.presetId ?? "",
-      item.passportPresetId ?? "",
       item.name.trim(),
       normalizedNumber(toInches(item.width, item.unit)),
       normalizedNumber(toInches(item.height, item.unit)),

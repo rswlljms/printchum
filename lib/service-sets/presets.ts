@@ -33,8 +33,8 @@ function letterPaper(
     presetId: "letter",
     orientation,
     margin: 0.25,
-    horizontalSpacing: 0.125,
-    verticalSpacing: 0.125,
+    horizontalSpacing: 0,
+    verticalSpacing: 0,
     unit: "in" as const,
   };
 }
@@ -140,8 +140,8 @@ export const builtInServiceSets: readonly ServiceSet[] = [
       presetId: "5r",
       orientation: "landscape",
       margin: 0.125,
-      horizontalSpacing: 0.0625,
-      verticalSpacing: 0.0625,
+      horizontalSpacing: 0,
+      verticalSpacing: 0,
       unit: "in",
     },
     background: { mode: "original" },

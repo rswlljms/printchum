@@ -7,16 +7,34 @@ describe("editor photo-size actions", () => {
     useEditorStore.getState().resetEditor();
   });
 
-  it("adds preset sizes with unique selected IDs and recalculates layout", () => {
+  it("increments quantity when the same preset is selected again", () => {
     const store = useEditorStore.getState();
     store.addPhotoSizeFromPreset("2x2");
+    const selectedId = useEditorStore.getState().photoSizes[0].id;
     useEditorStore.getState().addPhotoSizeFromPreset("2x2");
 
     const state = useEditorStore.getState();
-    expect(state.photoSizes).toHaveLength(2);
-    expect(state.photoSizes[0].id).not.toBe(state.photoSizes[1].id);
-    expect(state.photoSizes.map((item) => item.quantity)).toEqual([1, 1]);
+    expect(state.photoSizes).toHaveLength(1);
+    expect(state.photoSizes[0].id).toBe(selectedId);
+    expect(state.photoSizes[0].quantity).toBe(2);
     expect(state.layoutResult?.totalItems).toBe(2);
+  });
+
+  it("clears all unassigned photo sizes and their layout", () => {
+    useEditorStore.getState().addPhotoSizeFromPreset("2x2");
+    useEditorStore.getState().addPhotoSizeFromPreset("wallet");
+
+    useEditorStore.getState().clearPhotoSizes();
+
+    const state = useEditorStore.getState();
+    expect(state.photoSizes).toEqual([]);
+    expect(state.layoutResult).toMatchObject({
+      pages: [],
+      totalItems: 0,
+      placedItems: 0,
+      unplacedItems: [],
+      utilizationPercent: 0,
+    });
   });
 
   it("adds and edits a custom size in centimeters", () => {

@@ -1,6 +1,15 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Maximize2, Minus, Plus } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Maximize2,
+  Minus,
+  Plus,
+  Printer,
+  RotateCcw,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +21,10 @@ type PreviewToolbarProps = {
   utilizationPercent: number;
   onPageChange: (page: number) => void;
   onScaleChange: (scale: number) => void;
+  outputReady: boolean;
+  onReset: () => void;
+  onPrint: () => void;
+  onDownload: () => void;
 };
 
 export function PreviewToolbar({
@@ -22,6 +35,10 @@ export function PreviewToolbar({
   utilizationPercent,
   onPageChange,
   onScaleChange,
+  outputReady,
+  onReset,
+  onPrint,
+  onDownload,
 }: PreviewToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -80,6 +97,39 @@ export function PreviewToolbar({
           Fit page
         </Button>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-l border-[var(--gray-200)] pl-3">
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <RotateCcw className="size-3.5" />
+          Reset
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!outputReady}
+          onClick={onPrint}
+          title={
+            outputReady
+              ? "Open print options"
+              : "Add a photo and a valid layout before printing"
+          }
+        >
+          <Printer className="size-3.5" />
+          Print
+        </Button>
+        <Button
+          size="sm"
+          disabled={!outputReady}
+          onClick={onDownload}
+          title={
+            outputReady
+              ? "Download a print-ready PDF"
+              : "Add a photo and a valid layout before exporting"
+          }
+        >
+          <Download className="size-3.5" />
+          Download PDF
+        </Button>
       </div>
     </div>
   );

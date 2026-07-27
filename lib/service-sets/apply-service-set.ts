@@ -74,7 +74,6 @@ export function createEditorConfigurationFromServiceSet(
       id: createId(existingIds),
       presetId: item.photoSizePresetId,
       source: "service-set",
-      passportPresetId: item.passportPresetId,
       name: item.name,
       width: item.width,
       height: item.height,

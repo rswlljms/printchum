@@ -1,7 +1,7 @@
 "use client";
 
 import { Images, Plus } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { PhotoSizeDialog } from "@/components/editor/photo-size-dialog";
 import { PhotoSizeItem } from "@/components/editor/photo-size-item";
@@ -9,10 +9,7 @@ import { PhotoSizeSelector } from "@/components/editor/photo-size-selector";
 import { NameplateEditor } from "@/components/editor/nameplate-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  PHOTO_SIZE_DEFAULT_QUANTITY,
-  findPhotoSizePreset,
-} from "@/features/editor/photo-sizes/presets";
+import { PHOTO_SIZE_DEFAULT_QUANTITY } from "@/features/editor/photo-sizes/presets";
 import type { PhotoSizeFormInput, PhotoSizeFormValues } from "@/features/editor/photo-sizes/schemas";
 import type { NewPhotoSizeItem } from "@/features/editor/types";
 import { useEditorStore } from "@/stores/editor-store";
@@ -44,7 +41,21 @@ function toNewPhotoSizeItem(
 }
 
 export function PhotoSizesPanel() {
-  const photoSizes = useEditorStore((state) => state.photoSizes);
+  const allPhotoSizes = useEditorStore((state) => state.photoSizes);
+  const activeSourcePhotoId = useEditorStore(
+    (state) => state.activeSourcePhotoId,
+  );
+  const activePhotoLabel = useEditorStore(
+    (state) =>
+      state.sourcePhotos.find(
+        (photo) => photo.id === state.activeSourcePhotoId,
+      )?.label,
+  );
+  const photoSizes = allPhotoSizes.filter((item) =>
+    activeSourcePhotoId
+      ? item.sourcePhotoId === activeSourcePhotoId
+      : !item.sourcePhotoId,
+  );
   const addPhotoSizeFromPreset = useEditorStore(
     (state) => state.addPhotoSizeFromPreset,
   );
@@ -65,37 +76,22 @@ export function PhotoSizesPanel() {
   const [nameplateItemId, setNameplateItemId] = useState<string | null>(
     null,
   );
-  const [feedback, setFeedback] = useState<string | null>(null);
   const returnFocusElement = useRef<HTMLElement | null>(null);
   const editingItem = photoSizes.find((item) => item.id === editingItemId);
-  const editDefaults = useMemo<PhotoSizeFormInput | null>(
-    () =>
-      editingItem
-        ? {
-            name: editingItem.name,
-            width: editingItem.width,
-            height: editingItem.height,
-            unit: editingItem.unit,
-            quantity: editingItem.quantity,
-            allowRotation: false,
-            nameplateEnabled: editingItem.nameplateEnabled,
-          }
-        : null,
-    [editingItem],
-  );
-
-  useEffect(() => {
-    if (!feedback) {
-      return;
-    }
-    const timeout = window.setTimeout(() => setFeedback(null), 3000);
-    return () => window.clearTimeout(timeout);
-  }, [feedback]);
+  const editDefaults: PhotoSizeFormInput | null = editingItem
+    ? {
+        name: editingItem.name,
+        width: editingItem.width,
+        height: editingItem.height,
+        unit: editingItem.unit,
+        quantity: editingItem.quantity,
+        allowRotation: false,
+        nameplateEnabled: editingItem.nameplateEnabled,
+      }
+    : null;
 
   function addPreset(presetId: string): void {
-    const preset = findPhotoSizePreset(presetId);
     addPhotoSizeFromPreset(presetId);
-    setFeedback(`${preset?.name ?? "Photo size"} added.`);
   }
 
   function rememberDialogTrigger(): void {
@@ -128,12 +124,10 @@ export function PhotoSizesPanel() {
 
   function duplicateItem(itemId: string): void {
     duplicatePhotoSize(itemId);
-    setFeedback("Photo size duplicated.");
   }
 
   function removeItem(itemId: string): void {
     removePhotoSize(itemId);
-    setFeedback("Photo size removed.");
   }
 
   return (
@@ -144,10 +138,15 @@ export function PhotoSizesPanel() {
             <div className="flex items-center gap-2">
               <Images className="size-4 text-[var(--ink)]" />
               <div>
-                <p className="micro-label">03 — sizes</p>
+                <p className="micro-label">02 — sizes</p>
                 <h2 className="mt-1 font-semibold text-[var(--ink)]">
                   Photo sizes
                 </h2>
+                {activePhotoLabel ? (
+                  <p className="mt-1 font-technical text-[9px] uppercase tracking-wide text-[var(--gray-500)]">
+                    For {activePhotoLabel}
+                  </p>
+                ) : null}
               </div>
             </div>
             {photoSizes.length > 0 ? (
@@ -156,7 +155,6 @@ export function PhotoSizesPanel() {
                 className="font-technical text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink)]"
                 onClick={() => {
                   clearPhotoSizes();
-                  setFeedback("All photo sizes cleared.");
                 }}
               >
                 Clear all
@@ -165,15 +163,6 @@ export function PhotoSizesPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          {feedback ? (
-            <div
-              className="rounded-lg border border-[var(--gray-300)] bg-[var(--ink)] px-3 py-2 text-xs text-[var(--inverted-ink)]"
-              role="status"
-            >
-              {feedback}
-            </div>
-          ) : null}
-
           <PhotoSizeSelector
             onAddPreset={addPreset}
             onAddCustom={openCustomDialog}
@@ -236,7 +225,6 @@ export function PhotoSizesPanel() {
         onOpenChange={closeCustomDialog}
         onSubmit={(values) => {
           addCustomPhotoSize(toNewPhotoSizeItem(values));
-          setFeedback(`${values.name} added.`);
         }}
       />
 
@@ -262,7 +250,6 @@ export function PhotoSizesPanel() {
               allowRotation: false,
               nameplateEnabled: values.nameplateEnabled,
             });
-            setFeedback(`${values.name} updated.`);
             setEditingItemId(null);
           }}
         />

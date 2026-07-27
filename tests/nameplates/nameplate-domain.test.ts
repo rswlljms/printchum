@@ -14,7 +14,6 @@ describe("nameplate domain", () => {
     const valid = createNameplateSettings("name-id-department");
     expect(nameplateSettingsSchema.safeParse(valid).success).toBe(true);
     for (const changes of [
-      { primaryText: "" },
       { fontSizePoints: 4 },
       { fontWeight: 300 },
       { borderWidthPoints: 11 },
@@ -30,6 +29,15 @@ describe("nameplate domain", () => {
         }).success,
       ).toBe(false);
     }
+  });
+
+  it("allows the primary line to be cleared while editing", () => {
+    const settings = {
+      ...createNameplateSettings(),
+      primaryText: "",
+    };
+
+    expect(nameplateSettingsSchema.safeParse(settings).success).toBe(true);
   });
 
   it("uses deterministic points-to-inches measurement", () => {

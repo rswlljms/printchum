@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { chooseSelectOption } from "./helpers/select-option";
+
 test("selects standard paper, changes orientation, and preserves A4 dimensions across units", async ({
   page,
 }) => {
@@ -41,9 +43,10 @@ test("selects standard paper, changes orientation, and preserves A4 dimensions a
   );
 
   await page.getByRole("button", { name: "Use A4 paper" }).click();
-  await page
-    .getByRole("combobox", { name: "Measurement unit" })
-    .selectOption("in");
+  await chooseSelectOption(
+    page.getByRole("combobox", { name: "Measurement unit" }),
+    "Inches",
+  );
   await expect(page.getByRole("spinbutton", { name: "Paper width" })).toHaveValue(
     "8.268",
   );
@@ -51,9 +54,10 @@ test("selects standard paper, changes orientation, and preserves A4 dimensions a
     "11.693",
   );
 
-  await page
-    .getByRole("combobox", { name: "Measurement unit" })
-    .selectOption("mm");
+  await chooseSelectOption(
+    page.getByRole("combobox", { name: "Measurement unit" }),
+    "Millimeters",
+  );
   await expect(page.getByRole("spinbutton", { name: "Paper width" })).toHaveValue(
     "210",
   );

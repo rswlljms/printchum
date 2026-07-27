@@ -123,12 +123,12 @@ export function updateCustomServiceSet(
   });
 }
 
-export function removeCustomServiceSet(
+export function removeServiceSet(
   serviceSets: readonly ServiceSet[],
   serviceSetId: string,
 ): ServiceSet[] | null {
   const source = serviceSets.find((set) => set.id === serviceSetId);
-  if (!source || source.isBuiltIn) {
+  if (!source) {
     return null;
   }
   return normalizeOrder(serviceSets.filter((set) => set.id !== serviceSetId));

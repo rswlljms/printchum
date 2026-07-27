@@ -16,7 +16,6 @@ export type BackgroundPreference =
 export type ServiceSetPhotoItem = {
   id: string;
   photoSizePresetId?: string;
-  passportPresetId?: string;
   name: string;
   width: number;
   height: number;

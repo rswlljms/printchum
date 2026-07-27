@@ -48,11 +48,23 @@ describe("editor photo session lifecycle", () => {
   it("revokes the active URL when the photo owner is disposed", () => {
     createObjectUrl.mockReturnValue("blob:session-photo");
     useEditorStore.getState().replaceSourcePhoto(createPhoto());
+    useEditorStore.getState().addCustomPhotoSize({
+      name: "Session size",
+      width: 1,
+      height: 1,
+      unit: "in",
+      quantity: 1,
+      allowRotation: false,
+      nameplateEnabled: false,
+    });
 
     useEditorStore.getState().disposeSourcePhoto();
 
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:session-photo");
     expect(useEditorStore.getState().sourceObjectUrl).toBeNull();
+    expect(
+      useEditorStore.getState().photoSizes[0].sourcePhotoId,
+    ).toBeUndefined();
   });
 
   it("revokes the active URL when resetting the editor", () => {
@@ -94,5 +106,61 @@ describe("editor photo session lifecycle", () => {
       zoom: 1,
       rotation: 0,
     });
+  });
+
+  it("keeps each person's sizes and crop state independent", () => {
+    createObjectUrl
+      .mockReturnValueOnce("blob:person-1")
+      .mockReturnValueOnce("blob:person-2");
+
+    useEditorStore.getState().addSourcePhoto(createPhoto());
+    const firstPhotoId =
+      useEditorStore.getState().activeSourcePhotoId;
+    useEditorStore.getState().addCustomPhotoSize({
+      name: "Person 1 size",
+      width: 1,
+      height: 1,
+      unit: "in",
+      quantity: 4,
+      allowRotation: false,
+      nameplateEnabled: false,
+    });
+    useEditorStore.getState().setCropZoom(1.5);
+
+    useEditorStore.getState().addSourcePhoto(createPhoto("image/png"));
+    const secondPhotoId =
+      useEditorStore.getState().activeSourcePhotoId;
+    useEditorStore.getState().addCustomPhotoSize({
+      name: "Person 2 size",
+      width: 2,
+      height: 2,
+      unit: "in",
+      quantity: 2,
+      allowRotation: false,
+      nameplateEnabled: false,
+    });
+    useEditorStore.getState().setCropZoom(2);
+
+    expect(firstPhotoId).not.toBeNull();
+    expect(secondPhotoId).not.toBe(firstPhotoId);
+    expect(
+      useEditorStore.getState().photoSizes.map((item) => ({
+        sourcePhotoId: item.sourcePhotoId,
+        quantity: item.quantity,
+      })),
+    ).toEqual([
+      { sourcePhotoId: firstPhotoId, quantity: 4 },
+      { sourcePhotoId: secondPhotoId, quantity: 2 },
+    ]);
+
+    useEditorStore.getState().selectSourcePhoto(firstPhotoId!);
+    expect(useEditorStore.getState().crop.zoom).toBe(1.5);
+
+    useEditorStore.getState().removeSourcePhoto(firstPhotoId!);
+    const state = useEditorStore.getState();
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:person-1");
+    expect(state.sourcePhotos).toHaveLength(1);
+    expect(state.photoSizes).toHaveLength(1);
+    expect(state.photoSizes[0].sourcePhotoId).toBe(secondPhotoId);
   });
 });

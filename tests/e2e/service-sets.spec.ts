@@ -76,76 +76,56 @@ test("confirms replacement, tracks modification, and reapplies the set", async (
   ).toHaveValue("4");
 });
 
-test("creates, duplicates, disables, defaults, and deletes custom Service Sets", async ({
-  page,
-}) => {
-  const consoleErrors: string[] = [];
-  page.on("console", (message) => {
-    if (message.type() === "error") {
-      consoleErrors.push(message.text());
-    }
-  });
-  await page.goto("/service-sets");
-  await page.getByRole("button", { name: "Create Service Set" }).first().click();
-  const form = page.getByRole("dialog", { name: "Create Service Set" });
-  await form.getByRole("textbox", { name: "Name", exact: true }).fill(
-    "Studio Basic",
-  );
-  await form.getByRole("spinbutton", { name: "Price" }).fill("75");
-  await form.getByRole("button", { name: "Create Service Set" }).click();
-  await expect(page.getByText("Studio Basic created.")).toBeVisible();
-
-  const customCard = page
-    .locator("[data-service-set-id]")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Studio Basic",
-        exact: true,
-      }),
-    });
-  await customCard.getByRole("button", { name: "Duplicate" }).click();
-  await expect(page.getByText("Studio Basic duplicated.")).toBeVisible();
-  await expect(page.getByText("Studio Basic Copy", { exact: true })).toBeVisible();
-
-  await customCard.getByRole("button", { name: "Default" }).click();
-  await expect(
-    customCard.locator("span").filter({ hasText: /^Default$/ }),
-  ).toBeVisible();
-  await customCard.getByRole("button", { name: "Disable" }).click();
-  await expect(customCard.getByText("disabled", { exact: true })).toBeVisible();
-  await expect(
-    customCard.locator("span").filter({ hasText: /^Default$/ }),
-  ).toHaveCount(0);
-
-  await customCard.getByRole("button", { name: "Delete" }).click();
-  const confirmation = page.getByRole("dialog", {
-    name: "Delete Service Set?",
-  });
-  await confirmation
-    .getByRole("button", { name: "Delete custom set" })
-    .click();
-  await expect(page.getByText("Studio Basic deleted.")).toBeVisible();
-  await expect(customCard).toHaveCount(0);
-  expect(consoleErrors).toEqual([]);
-});
-
-test("saves the current editor configuration as a photo-free Service Set", async ({
+test("creates and removes a photo-free custom Service Set in the editor", async ({
   page,
 }) => {
   await page.goto("/editor");
-  await page.getByRole("button", { name: "Add 2 × 2 photo size" }).click();
-  await page
-    .getByRole("button", { name: "Save current as Service Set" })
-    .click();
-  const dialog = page.getByRole("dialog", { name: "Save as Service Set" });
+  await page.getByRole("button", { name: "Custom set" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create Service Set" });
   await dialog
-    .getByRole("textbox", { name: "Service Set name" })
+    .getByRole("textbox", { name: "Name", exact: true })
     .fill("Current Layout");
-  await dialog.getByRole("button", { name: "Save Service Set" }).click();
-  await expect(page.getByText("Current Layout saved.")).toBeVisible();
+  await expect(
+    dialog.getByRole("spinbutton", { name: "Qty" }),
+  ).toHaveValue("4");
+  await dialog.getByRole("button", { name: "Create Service Set" }).click();
 
-  await page.getByRole("link", { name: "Custom set" }).click();
-  await expect(page).toHaveURL(/\/service-sets/);
-  await expect(page.getByText("Current Layout", { exact: true })).toBeVisible();
+  const customSet = page.getByRole("button", {
+    name: "Review Current Layout",
+  });
+  await expect(customSet).toBeVisible();
+  await customSet.click();
+  const details = page.getByRole("dialog", { name: "Current Layout" });
+  await expect(details).toContainText("2 × 2");
   await expect(page.getByText(/blob:/)).toHaveCount(0);
+  await details
+    .getByRole("button", { name: "Delete set" })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Delete Service Set?" })
+    .getByRole("button", { name: "Delete Service Set" })
+    .click();
+  await expect(customSet).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Service Sets" }),
+  ).toHaveCount(0);
+});
+
+test("removes a built-in Service Set from its details dialog", async ({
+  page,
+}) => {
+  await page.goto("/editor");
+  const setCard = page.getByRole("button", { name: "Review Set A" });
+
+  await setCard.click();
+  await page
+    .getByRole("dialog", { name: "Set A" })
+    .getByRole("button", { name: "Delete set" })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Delete Service Set?" })
+    .getByRole("button", { name: "Delete Service Set" })
+    .click();
+
+  await expect(setCard).toHaveCount(0);
 });

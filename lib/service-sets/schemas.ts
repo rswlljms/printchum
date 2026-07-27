@@ -11,7 +11,6 @@ const hexColor = /^#[0-9a-fA-F]{6}$/;
 export const serviceSetPhotoItemSchema = z.object({
   id: z.string().trim().min(1),
   photoSizePresetId: z.string().trim().min(1).optional(),
-  passportPresetId: z.string().trim().min(1).optional(),
   name: z.string().trim().min(1).max(50),
   width: finiteDimension.max(100),
   height: finiteDimension.max(100),

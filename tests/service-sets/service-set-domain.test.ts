@@ -6,7 +6,7 @@ import {
   createServiceSet,
   duplicateServiceSet,
   moveServiceSet,
-  removeCustomServiceSet,
+  removeServiceSet,
   setDefaultServiceSet,
   setServiceSetStatus,
   updateCustomServiceSet,
@@ -150,10 +150,12 @@ describe("Service Set domain", () => {
     expect(duplicateResult?.duplicate.isBuiltIn).toBe(false);
   });
 
-  it("protects built-ins while allowing custom updates and deletion", () => {
+  it("protects built-ins from edits while allowing their removal", () => {
     const sets = createInitialServiceSets();
     expect(updateCustomServiceSet(sets, sets[0].id, { name: "Changed" })).toBeNull();
-    expect(removeCustomServiceSet(sets, sets[0].id)).toBeNull();
+    expect(removeServiceSet(sets, sets[0].id)).toHaveLength(
+      sets.length - 1,
+    );
   });
 
   it("enforces a single enabled default and clears default on disable", () => {

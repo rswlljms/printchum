@@ -215,7 +215,6 @@ printchum/
 │   │   ├── editor/
 │   │   ├── projects/
 │   │   ├── service-sets/
-│   │   ├── passport-presets/
 │   │   ├── billing/
 │   │   └── settings/
 │   │
@@ -238,7 +237,6 @@ printchum/
 │   ├── editor/
 │   ├── projects/
 │   ├── service-sets/
-│   └── passport-presets/
 │
 ├── lib/
 │   ├── background-removal/
@@ -303,7 +301,6 @@ All marketing content must present the product as **PrintChum**.
 /editor
 /projects
 /service-sets
-/passport-presets
 /billing
 /settings
 ```
@@ -346,7 +343,6 @@ Support common presets such as:
 - 1.5 × 1.5 in
 - 2 × 2 in
 - Passport
-- Visa
 - Wallet
 - 2R
 - Half body
@@ -388,42 +384,7 @@ A service set may include:
 
 Do not hard-code all service sets into a source file after the SaaS version is functional.
 
-## 5.5 Passport and Visa Presets
-
-Support country-specific document presets.
-
-Each preset should include:
-
-```ts
-type DocumentPhotoPreset = {
-  id: string;
-  countryCode: string;
-  countryName: string;
-  documentType: "passport" | "visa" | "id" | "license" | "custom";
-  name: string;
-  width: number;
-  height: number;
-  unit: "in" | "cm" | "mm";
-  allowedBackgroundColors: string[];
-  headHeightMin?: number;
-  headHeightMax?: number;
-  eyeLineMin?: number;
-  eyeLineMax?: number;
-  notes?: string;
-  officialSourceUrl?: string;
-  lastVerifiedAt?: string;
-};
-```
-
-Requirements may change. Store presets in the database rather than permanently hard-coding them.
-
-Display a disclaimer:
-
-> The preset is provided as a preparation guide. Final acceptance depends on the issuing authority’s current requirements.
-
-Do not claim guaranteed acceptance.
-
-## 5.6 Nameplates
+## 5.5 Nameplates
 
 Support optional nameplates for:
 
@@ -458,8 +419,6 @@ Support:
 - Background color
 - Text color
 - Border
-
-Show a warning when enabling a nameplate on official passport or visa presets.
 
 ---
 
@@ -538,7 +497,6 @@ The application may store:
 - Subscription data
 - AI-credit usage
 - Service-set presets
-- Passport preset metadata
 - Paper presets
 - Layout templates
 - Nameplate templates
@@ -1002,7 +960,6 @@ service_sets
 service_set_items
 paper_presets
 nameplate_templates
-document_photo_presets
 
 projects
 project_settings
@@ -1362,7 +1319,6 @@ Follow this order unless the user explicitly changes priorities.
 
 - Service sets
 - Custom paper presets
-- Passport and visa presets
 - Preset metadata and verification dates
 
 ## Phase 6: Authentication and SaaS
@@ -1579,7 +1535,6 @@ The first paid release of **PrintChum** should include:
 - Background color replacement
 - Standard and custom photo sizes
 - Standard and custom paper sizes
-- Country-specific passport preset library
 - Optional nameplates
 - Service sets
 - Accurate Canvas preview

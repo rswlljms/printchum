@@ -1,5 +1,35 @@
 import { expect, test } from "@playwright/test";
 
+import { chooseSelectOption } from "./helpers/select-option";
+
+test("uses the five-section editor order without Passport Presets", async ({
+  page,
+}) => {
+  await page.goto("/editor");
+
+  const configuration = page.getByRole("complementary", {
+    name: "Layout configuration",
+  });
+  const numberedLabels = (
+    await configuration.locator(".micro-label").allTextContents()
+  ).filter((label) => /^\d{2}\s/.test(label));
+
+  expect(numberedLabels).toEqual([
+    "01 — source",
+    "02 — sizes",
+    "03 — package",
+    "04 — output",
+  ]);
+  await expect(
+    page
+      .getByRole("complementary", { name: "Layout summary" })
+      .getByText("05 — summary", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Passport Presets" }),
+  ).toHaveCount(0);
+});
+
 test("starts every selected standard photo size at quantity one", async ({
   page,
 }) => {
@@ -21,6 +51,28 @@ test("starts every selected standard photo size at quantity one", async ({
   }
 });
 
+test("increments a repeated preset and clears all selected sizes", async ({
+  page,
+}) => {
+  await page.goto("/editor");
+  const addSize = page.getByRole("button", {
+    name: "Add 2 × 2 photo size",
+  });
+
+  await addSize.click();
+  await addSize.click();
+
+  const selectedSizes = page.locator("[data-photo-size-id]");
+  await expect(selectedSizes).toHaveCount(1);
+  await expect(
+    selectedSizes.getByRole("spinbutton", { name: /quantity/i }),
+  ).toHaveValue("2");
+
+  await page.getByRole("button", { name: "Clear all" }).click();
+  await expect(selectedSizes).toHaveCount(0);
+  await expect(page.getByText("No photo sizes selected")).toBeVisible();
+});
+
 test("adds, edits, duplicates, and removes a custom photo size", async ({
   page,
 }) => {
@@ -40,7 +92,10 @@ test("adds, edits, duplicates, and removes a custom photo size", async ({
     addDialog.getByRole("spinbutton", { name: "Quantity" }),
   ).toHaveValue("1");
   await addDialog.getByRole("textbox", { name: "Name", exact: true }).fill("Metric portrait");
-  await addDialog.getByRole("combobox", { name: "Unit" }).selectOption("cm");
+  await chooseSelectOption(
+    addDialog.getByRole("combobox", { name: "Unit" }),
+    "Centimeters",
+  );
   await addDialog.getByLabel("Width", { exact: true }).fill("5.08");
   await addDialog.getByLabel("Height", { exact: true }).fill("7.62");
   await addDialog.getByRole("spinbutton", { name: "Quantity" }).fill("3");
@@ -65,7 +120,10 @@ test("adds, edits, duplicates, and removes a custom photo size", async ({
 
   await metricItem.getByRole("button", { name: "Edit Metric portrait" }).click();
   const editDialog = page.getByRole("dialog", { name: "Edit photo size" });
-  await editDialog.getByRole("combobox", { name: "Unit" }).selectOption("in");
+  await chooseSelectOption(
+    editDialog.getByRole("combobox", { name: "Unit" }),
+    "Inches",
+  );
   await expect(editDialog.getByLabel("Width", { exact: true })).toHaveValue("2");
   await expect(editDialog.getByLabel("Height", { exact: true })).toHaveValue("3");
   await editDialog.getByRole("button", { name: "Save changes" }).click();

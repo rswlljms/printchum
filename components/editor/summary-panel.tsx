@@ -20,9 +20,7 @@ export function SummaryPanel() {
   );
   const selectedSizeCount = useEditorStore((state) => state.photoSizes.length);
   const photoSizes = useEditorStore((state) => state.photoSizes);
-  const passportBackgroundRecommendation = useEditorStore(
-    (state) => state.passportBackgroundRecommendation,
-  );
+  const backgroundMode = useEditorStore((state) => state.backgroundMode);
   const selectedServiceSet = serviceSets.find((set) => set.id === selectedServiceSetId);
   const printableArea = calculatePrintableArea(paper);
   const paperWidth = roundMeasurementForDisplay(paper.width, paper.unit);
@@ -35,20 +33,9 @@ export function SummaryPanel() {
     fromInches(printableArea.printableHeightInches, paper.unit),
     paper.unit,
   );
-  const passportItems = photoSizes.filter(
-    (item) => Boolean(item.passportPresetId),
-  );
-  const passportNames = [
-    ...new Set(passportItems.map((item) => item.name)),
-  ];
   const nameplateItems = photoSizes.filter(
     (item) => item.nameplateEnabled && item.nameplate?.enabled,
   );
-  const outsideNameplateCount = nameplateItems.filter((item) =>
-    item.nameplate?.position.endsWith("-outside"),
-  ).length;
-  const insideNameplateCount =
-    nameplateItems.length - outsideNameplateCount;
 
   const summaryRows = [
     ["Paper", paper.name],
@@ -57,14 +44,8 @@ export function SummaryPanel() {
     ["Printable area", `${printableWidth} × ${printableHeight} ${paper.unit}`],
     ["Selected sizes", String(selectedSizeCount)],
     [
-      "Passport presets",
-      passportNames.length > 0 ? passportNames.join(", ") : "None",
-    ],
-    [
       "Background",
-      passportBackgroundRecommendation
-        ? `${passportBackgroundRecommendation} recommended`
-        : "No passport recommendation",
+      backgroundMode === "solid" ? "Solid color" : backgroundMode,
     ],
     [
       "Nameplates",
@@ -72,15 +53,25 @@ export function SummaryPanel() {
         nameplateItems.length === 1 ? "size" : "sizes"
       } enabled`,
     ],
-    ["Inside nameplates", String(insideNameplateCount)],
-    ["Outside nameplates", String(outsideNameplateCount)],
-    ["Total photos", String(layoutResult?.totalItems ?? 0)],
-    ["Pages", String(layoutResult?.pages.length ?? 0)],
     [
-      "Utilization",
-      `${(layoutResult?.utilizationPercent ?? 0).toFixed(1)}%`,
+      "Photos",
+      `${layoutResult?.placedItems ?? 0} placed · ${
+        layoutResult?.totalItems ?? 0
+      } requested`,
     ],
+    ["Pages", String(layoutResult?.pages.length ?? 0)],
     ["Unplaced", String(layoutResult?.unplacedItems.length ?? 0)],
+    [
+      "Export status",
+      layoutResult && layoutResult.placedItems > 0 ? "Ready" : "Needs layout",
+    ],
+    [
+      "Export details",
+      `${paper.cuttingGuidesEnabled ? "Guides" : "No guides"} · ${
+        paper.sizeLabelsEnabled ? "Labels" : "No labels"
+      } · ${backgroundMode}`,
+    ],
+    ["Output quality", "High · 300 PPI"],
     [
       "Service set",
       selectedServiceSet
@@ -91,7 +82,9 @@ export function SummaryPanel() {
           } · ${formatServiceSetPrice(selectedServiceSet)}`
         : "Custom",
     ],
-  ] as const;
+  ].filter(
+    ([label]) => label !== "Export details" && label !== "Background",
+  );
 
   return (
     <aside
@@ -102,7 +95,7 @@ export function SummaryPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <p className="micro-label">06 — summary</p>
+              <p className="micro-label">05 — summary</p>
               <h2 className="mt-1 font-semibold text-[var(--ink)]">Layout summary</h2>
             </div>
           </div>
@@ -115,7 +108,7 @@ export function SummaryPanel() {
           ) : (
             <dl className="divide-y divide-slate-100">
               {summaryRows.map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-3 py-2.5">
+                <div key={label} className="flex items-center justify-between gap-3 py-1.5">
                   <dt className="font-technical text-[10px] uppercase tracking-wide text-[var(--gray-500)]">{label}</dt>
                   <dd className="text-right text-xs font-medium capitalize text-[var(--gray-800)]">{value}</dd>
                 </div>

@@ -43,7 +43,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
   {
     id: "passport",
     name: "Passport",
-    description: "Placeholder · not official",
+    description: "Common document photo size",
     width: 35,
     height: 45,
     unit: "mm",

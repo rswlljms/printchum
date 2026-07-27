@@ -1,9 +1,9 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -53,9 +53,6 @@ export function NameplateEditor({
   const applyToAll = useEditorStore(
     (state) => state.applyNameplateToAllPhotoSizes,
   );
-  const [passportWarningPending, setPassportWarningPending] =
-    useState(false);
-
   if (!item) {
     return null;
   }
@@ -68,26 +65,10 @@ export function NameplateEditor({
       toInches(item.width, item.unit),
     );
 
-  function enableNameplate(): void {
-    if (!item) {
-      return;
-    }
-    if (item.passportPresetId) {
-      setPassportWarningPending(true);
-      return;
-    }
-    setEnabled(item.id, true);
-  }
-
   return (
     <Dialog
       open
-      onOpenChange={(open) => {
-        if (!open) {
-          setPassportWarningPending(false);
-        }
-        onOpenChange(open);
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -106,60 +87,19 @@ export function NameplateEditor({
               Enable a nameplate to add names, ID numbers, or department
               information to this photo size.
             </p>
-            {passportWarningPending ? (
-              <div
-                className="mt-4 rounded-lg border border-[var(--ink)] bg-[var(--gray-50)] p-3 text-left"
-                role="alert"
-              >
-                <p className="text-xs font-semibold">
-                  Nameplates are normally not part of official passport-photo
-                  requirements.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPassportWarningPending(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      setEnabled(item.id, true);
-                      setPassportWarningPending(false);
-                    }}
-                  >
-                    Enable anyway
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                className="mt-4"
-                onClick={enableNameplate}
-              >
-                Enable Nameplate
-              </Button>
-            )}
+            <Button
+              type="button"
+              className="mt-4"
+              onClick={() => setEnabled(item.id, true)}
+            >
+              Enable Nameplate
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            {item.passportPresetId ? (
-              <p
-                className="rounded-lg border border-[var(--ink)] bg-[var(--gray-50)] p-3 text-xs leading-5"
-                role="alert"
-              >
-                Nameplates are normally not part of official passport-photo
-                requirements.
-              </p>
-            ) : null}
             <label className="block text-xs font-medium">
               Preset
-              <select
+              <Select
                 value={settings.presetType}
                 onChange={(event) =>
                   setPreset(
@@ -174,7 +114,7 @@ export function NameplateEditor({
                     {preset.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             {[
               ["primaryText", "Primary text", settings.primaryText],
@@ -212,7 +152,7 @@ export function NameplateEditor({
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs font-medium">
                 Position
-                <select
+                <Select
                   value={settings.position}
                   onChange={(event) =>
                     updateNameplate(item.id, {
@@ -225,11 +165,11 @@ export function NameplateEditor({
                   <option value="bottom-inside">Bottom inside</option>
                   <option value="top-outside">Top outside</option>
                   <option value="top-inside">Top inside</option>
-                </select>
+                </Select>
               </label>
               <label className="text-xs font-medium">
                 Alignment
-                <select
+                <Select
                   value={settings.textAlign}
                   onChange={(event) =>
                     updateNameplate(item.id, {
@@ -241,7 +181,7 @@ export function NameplateEditor({
                   <option value="left">Left</option>
                   <option value="center">Center</option>
                   <option value="right">Right</option>
-                </select>
+                </Select>
               </label>
             </div>
 
@@ -267,7 +207,7 @@ export function NameplateEditor({
                 </label>
                 <label className="text-xs">
                   Font weight
-                  <select
+                  <Select
                     value={settings.fontWeight}
                     onChange={(event) =>
                       updateNameplate(item.id, {
@@ -283,7 +223,7 @@ export function NameplateEditor({
                         {weight}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 {[
                   ["textColor", "Text color", settings.textColor],

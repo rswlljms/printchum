@@ -2,11 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -113,7 +119,8 @@ export function ServiceSetForm({
     name: "photoItems",
   });
   const paperSource = useWatch({ control, name: "paper.source" });
-  const backgroundMode = useWatch({ control, name: "background.mode" });
+  const paperPresetId = useWatch({ control, name: "paper.presetId" });
+  const [photoPresetId, setPhotoPresetId] = useState("1x1");
 
   useEffect(() => {
     if (open) {
@@ -234,10 +241,22 @@ export function ServiceSetForm({
               <div className="grid grid-cols-2 gap-3">
                 <label className="block text-xs font-medium">
                   Status
-                  <select {...register("status")} className={fieldClassName}>
-                    <option value="enabled">Enabled</option>
-                    <option value="disabled">Disabled</option>
-                  </select>
+                  <Controller
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                      <Select
+                        name={field.name}
+                        value={field.value}
+                        onBlur={field.onBlur}
+                        onChange={field.onChange}
+                        className={fieldClassName}
+                      >
+                        <option value="enabled">Enabled</option>
+                        <option value="disabled">Disabled</option>
+                      </Select>
+                    )}
+                  />
                 </label>
                 <label className="mt-6 flex items-center gap-2 rounded-lg border border-[var(--gray-200)] px-3 text-xs">
                   <input
@@ -253,10 +272,12 @@ export function ServiceSetForm({
                 <div className="flex items-end gap-2">
                   <label className="flex-1 text-xs font-medium">
                     Add standard photo size
-                    <select
-                      id="service-set-photo-preset"
+                    <Select
+                      value={photoPresetId}
+                      onChange={(event) =>
+                        setPhotoPresetId(event.target.value)
+                      }
                       className={fieldClassName}
-                      defaultValue="1x1"
                     >
                       {photoSizePresets
                         .filter((preset) => preset.category !== "custom")
@@ -265,19 +286,12 @@ export function ServiceSetForm({
                             {preset.name}
                           </option>
                         ))}
-                    </select>
+                    </Select>
                   </label>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      const element = document.getElementById(
-                        "service-set-photo-preset",
-                      );
-                      if (element instanceof HTMLSelectElement) {
-                        addPhotoPreset(element.value);
-                      }
-                    }}
+                    onClick={() => addPhotoPreset(photoPresetId)}
                   >
                     <Plus className="size-3.5" />
                     Add
@@ -351,14 +365,23 @@ export function ServiceSetForm({
                       </label>
                       <label className="text-xs">
                         Unit
-                        <select
-                          {...register(`photoItems.${index}.unit`)}
-                          className={fieldClassName}
-                        >
-                          <option value="in">in</option>
-                          <option value="cm">cm</option>
-                          <option value="mm">mm</option>
-                        </select>
+                        <Controller
+                          control={control}
+                          name={`photoItems.${index}.unit`}
+                          render={({ field: unitField }) => (
+                            <Select
+                              name={unitField.name}
+                              value={unitField.value}
+                              onBlur={unitField.onBlur}
+                              onChange={unitField.onChange}
+                              className={fieldClassName}
+                            >
+                              <option value="in">in</option>
+                              <option value="cm">cm</option>
+                              <option value="mm">mm</option>
+                            </Select>
+                          )}
+                        />
                       </label>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-4 text-xs">
@@ -378,7 +401,7 @@ export function ServiceSetForm({
                             `photoItems.${index}.nameplateEnabled`,
                           )}
                         />
-                        Nameplate placeholder
+                        Enable nameplate
                       </label>
                     </div>
                   </div>
@@ -395,7 +418,7 @@ export function ServiceSetForm({
               <p className="micro-label">02 — output defaults</p>
               <label className="block text-xs font-medium">
                 Paper source
-                <select
+                <Select
                   value={paperSource}
                   onChange={(event) => {
                     const source = event.target.value;
@@ -427,14 +450,14 @@ export function ServiceSetForm({
                 >
                   <option value="preset">Standard preset</option>
                   <option value="custom">Custom paper</option>
-                </select>
+                </Select>
               </label>
 
               {paperSource === "preset" ? (
                 <label className="block text-xs font-medium">
                   Paper preset
-                  <select
-                    {...register("paper.presetId")}
+                  <Select
+                    value={paperPresetId ?? "letter"}
                     className={fieldClassName}
                     onChange={(event) => {
                       const preset = paperPresets.find(
@@ -463,7 +486,7 @@ export function ServiceSetForm({
                           {preset.name}
                         </option>
                       ))}
-                  </select>
+                  </Select>
                 </label>
               ) : (
                 <div className="space-y-3">
@@ -495,14 +518,23 @@ export function ServiceSetForm({
                     </label>
                     <label className="text-xs">
                       Unit
-                      <select
-                        {...register("paper.unit")}
-                        className={fieldClassName}
-                      >
-                        <option value="in">in</option>
-                        <option value="cm">cm</option>
-                        <option value="mm">mm</option>
-                      </select>
+                      <Controller
+                        control={control}
+                        name="paper.unit"
+                        render={({ field }) => (
+                          <Select
+                            name={field.name}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            onChange={field.onChange}
+                            className={fieldClassName}
+                          >
+                            <option value="in">in</option>
+                            <option value="cm">cm</option>
+                            <option value="mm">mm</option>
+                          </Select>
+                        )}
+                      />
                     </label>
                   </div>
                 </div>
@@ -510,13 +542,22 @@ export function ServiceSetForm({
 
               <label className="block text-xs font-medium">
                 Orientation
-                <select
-                  {...register("paper.orientation")}
-                  className={fieldClassName}
-                >
-                  <option value="portrait">Portrait</option>
-                  <option value="landscape">Landscape</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="paper.orientation"
+                  render={({ field }) => (
+                    <Select
+                      name={field.name}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      onChange={field.onChange}
+                      className={fieldClassName}
+                    >
+                      <option value="portrait">Portrait</option>
+                      <option value="landscape">Landscape</option>
+                    </Select>
+                  )}
+                />
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <label className="text-xs">
@@ -550,48 +591,6 @@ export function ServiceSetForm({
                   />
                 </label>
               </div>
-
-              <label className="block text-xs font-medium">
-                Background preference
-                <select
-                  value={backgroundMode}
-                  onChange={(event) => {
-                    const mode = event.target.value;
-                    if (mode === "solid") {
-                      setValue("background", {
-                        mode,
-                        color: "#ffffff",
-                      });
-                    } else if (
-                      mode === "original" ||
-                      mode === "transparent"
-                    ) {
-                      setValue("background", { mode });
-                    }
-                  }}
-                  className={fieldClassName}
-                >
-                  <option value="original">Original</option>
-                  <option value="transparent">Transparent</option>
-                  <option value="solid">Solid color</option>
-                </select>
-              </label>
-              {backgroundMode === "solid" ? (
-                <label className="block text-xs font-medium">
-                  Background color
-                  <input
-                    type="color"
-                    {...register("background.color")}
-                    className="mt-1.5 h-10 w-full rounded-md border border-[var(--gray-200)] p-1"
-                  />
-                </label>
-              ) : null}
-              {backgroundMode === "transparent" ? (
-                <p className="rounded-lg bg-[var(--gray-50)] p-3 text-xs text-[var(--gray-500)]">
-                  Transparent output requires background removal when the AI
-                  integration is connected.
-                </p>
-              ) : null}
 
               <div className="space-y-2 rounded-xl border border-[var(--gray-200)] p-3 text-xs">
                 {[

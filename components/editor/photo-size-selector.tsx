@@ -56,9 +56,6 @@ export function PhotoSizeSelector({
           </button>
         ))}
       </div>
-      <p className="mt-3 text-[11px] leading-5 text-[var(--gray-500)]">
-        Country-specific passport presets will be added in a later phase.
-      </p>
     </div>
   );
 }

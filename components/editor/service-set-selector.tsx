@@ -1,9 +1,9 @@
 "use client";
 
-import { Eye, PackagePlus, RefreshCcw, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { Eye, PackagePlus, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { ServiceSetForm } from "@/components/service-sets/service-set-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -50,16 +50,17 @@ export function ServiceSetSelector() {
   const reapplySelectedServiceSet = useEditorStore(
     (state) => state.reapplySelectedServiceSet,
   );
-  const saveCurrentEditorAsServiceSet = useEditorStore(
-    (state) => state.saveCurrentEditorAsServiceSet,
+  const createServiceSet = useEditorStore(
+    (state) => state.createServiceSet,
+  );
+  const removeServiceSet = useEditorStore(
+    (state) => state.removeServiceSet,
   );
   const [previewSet, setPreviewSet] = useState<ServiceSet | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ServiceSet | null>(null);
   const [confirmationSet, setConfirmationSet] =
     useState<ServiceSet | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveName, setSaveName] = useState("");
-  const [savePrice, setSavePrice] = useState("40");
+  const [createFormOpen, setCreateFormOpen] = useState(false);
 
   const enabledSets = useMemo(
     () =>
@@ -84,15 +85,13 @@ export function ServiceSetSelector() {
       paper.presetId !== "letter" ||
       paper.orientation !== "portrait" ||
       paper.margin !== 0.25 ||
-      paper.horizontalSpacing !== 0.125 ||
-      paper.verticalSpacing !== 0.125;
+      paper.horizontalSpacing !== 0 ||
+      paper.verticalSpacing !== 0;
     if (hasExistingConfiguration) {
       setConfirmationSet(serviceSet);
       return;
     }
-    if (applyServiceSet(serviceSet.id)) {
-      setFeedback(`${serviceSet.name} applied.`);
-    }
+    applyServiceSet(serviceSet.id);
   }
 
   return (
@@ -103,18 +102,20 @@ export function ServiceSetSelector() {
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-[var(--ink)]" />
               <div>
-                <p className="micro-label">02 — package</p>
+                <p className="micro-label">03 — package</p>
                 <h2 className="mt-1 font-semibold text-[var(--ink)]">
                   Service set
                 </h2>
               </div>
             </div>
-            <Link
-              href="/service-sets?create=1"
+            <button
+              type="button"
+              onClick={() => setCreateFormOpen(true)}
               className="font-technical text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink)]"
+              title="Create a custom Service Set"
             >
               Custom set →
-            </Link>
+            </button>
           </div>
         </CardHeader>
         <CardContent>
@@ -135,9 +136,7 @@ export function ServiceSetSelector() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    if (reapplySelectedServiceSet()) {
-                      setFeedback(`${selectedSet.name} reapplied.`);
-                    }
+                    reapplySelectedServiceSet();
                   }}
                 >
                   <RefreshCcw className="size-3" />
@@ -147,47 +146,15 @@ export function ServiceSetSelector() {
             </div>
           ) : null}
 
-          {feedback ? (
-            <p
-              className="mb-3 rounded-lg bg-[var(--ink)] px-3 py-2 text-xs text-[var(--inverted-ink)]"
-              role="status"
-            >
-              {feedback}
-            </p>
-          ) : null}
-
-          {photoSizes.length > 0 ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="mb-3 w-full"
-              onClick={() => {
-                setSaveName(
-                  selectedSet
-                    ? `${selectedSet.name} Custom`
-                    : "Custom Service Set",
-                );
-                setSaveDialogOpen(true);
-              }}
-            >
-              <PackagePlus className="size-3" />
-              Save current as Service Set
-            </Button>
-          ) : null}
-
           {enabledSets.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--gray-300)] p-4 text-center">
               <p className="text-sm font-semibold text-[var(--ink)]">
                 No Service Sets available
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--gray-500)]">
-                Enable a Service Set or create a custom one to use
-                package-based layouts.
+                Add photo sizes and use Custom set above to save this layout
+                as a reusable package.
               </p>
-              <Button asChild size="sm" className="mt-3">
-                <Link href="/service-sets">Manage Service Sets</Link>
-              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -331,6 +298,17 @@ export function ServiceSetSelector() {
               <Button
                 type="button"
                 variant="outline"
+                onClick={() => {
+                  setDeleteTarget(previewSet);
+                  setPreviewSet(null);
+                }}
+              >
+                <Trash2 className="size-3.5" />
+                Delete set
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setPreviewSet(null)}
               >
                 Cancel
@@ -347,82 +325,66 @@ export function ServiceSetSelector() {
         ) : null}
       </Dialog>
 
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <p className="micro-label">Current configuration</p>
-            <DialogTitle>Save as Service Set</DialogTitle>
-            <DialogDescription>
-              Only sizes, paper, and rendering preferences are copied. The
-              active photo and crop state are excluded.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <label className="block text-xs font-medium">
-              Service Set name
-              <input
-                value={saveName}
-                onChange={(event) => setSaveName(event.target.value)}
-                className="mt-1.5 h-10 w-full rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-3 text-sm"
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block text-xs font-medium">
-                Price
-                <input
-                  value={savePrice}
-                  onChange={(event) => setSavePrice(event.target.value)}
-                  type="number"
-                  min="0"
-                  max="1000000"
-                  className="mt-1.5 h-10 w-full rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-3 text-sm"
-                />
-              </label>
-              <label className="block text-xs font-medium">
-                Currency
-                <input
-                  value="PHP"
-                  readOnly
-                  className="mt-1.5 h-10 w-full rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-3 text-sm"
-                />
-              </label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSaveDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                const price = Number(savePrice);
-                if (
-                  saveName.trim() &&
-                  Number.isFinite(price) &&
-                  price >= 0
-                ) {
-                  const id = saveCurrentEditorAsServiceSet({
-                    name: saveName.trim(),
-                    description: "Saved from the current editor configuration.",
-                    price,
-                    currencyCode: "PHP",
-                  });
-                  if (id) {
-                    setFeedback(`${saveName.trim()} saved.`);
-                    setSaveDialogOpen(false);
-                  }
-                }
-              }}
-            >
-              Save Service Set
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        {deleteTarget ? (
+          <DialogContent>
+            <DialogHeader>
+              <p className="micro-label">Remove package</p>
+              <DialogTitle>Delete Service Set?</DialogTitle>
+              <DialogDescription>
+                {deleteTarget.name} will be removed from this workspace. This
+                action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  removeServiceSet(deleteTarget.id);
+                  setDeleteTarget(null);
+                }}
+              >
+                <Trash2 className="size-3.5" />
+                Delete Service Set
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        ) : null}
       </Dialog>
+
+      <ServiceSetForm
+        open={createFormOpen}
+        serviceSet={null}
+        onOpenChange={setCreateFormOpen}
+        onSubmit={(values) =>
+          Boolean(
+            createServiceSet({
+              name: values.name,
+              description: values.description,
+              status: values.status,
+              isDefault: values.isDefault,
+              price: values.price,
+              currencyCode: values.currencyCode,
+              photoItems: values.photoItems,
+              paper: values.paper,
+              background: values.background,
+              cuttingGuidesEnabled: values.cuttingGuidesEnabled,
+              sizeLabelsEnabled: values.sizeLabelsEnabled,
+              allowPhotoRotation: values.allowPhotoRotation,
+            }),
+          )
+        }
+      />
 
       <Dialog
         open={Boolean(confirmationSet)}
@@ -468,9 +430,7 @@ export function ServiceSetSelector() {
               <Button
                 type="button"
                 onClick={() => {
-                  if (applyServiceSet(confirmationSet.id)) {
-                    setFeedback(`${confirmationSet.name} applied.`);
-                  }
+                  applyServiceSet(confirmationSet.id);
                   setConfirmationSet(null);
                 }}
               >

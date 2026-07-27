@@ -304,3 +304,35 @@ select:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+
+@page {
+  margin: 0;
+}
+
+@media print {
+  body {
+    margin: 0;
+    background: #ffffff;
+  }
+
+  [data-testid="print-preview"] > header,
+  [data-testid="print-preview"] p {
+    display: none !important;
+  }
+
+  [data-testid="print-preview"],
+  [data-testid="print-preview"] main {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  [data-testid="print-preview"] canvas {
+    width: auto !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    break-after: page;
+  }
+}

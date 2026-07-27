@@ -35,7 +35,7 @@ describe("editor paper settings", () => {
     useEditorStore.getState().resetEditor();
   });
 
-  it("applies standard presets and recalculates page overflow", () => {
+  it("applies edge-to-edge standard presets and recalculates layout", () => {
     useEditorStore.getState().addCustomPhotoSize({
       name: "2 × 2",
       width: 2,
@@ -47,7 +47,7 @@ describe("editor paper settings", () => {
     });
 
     useEditorStore.getState().setPaperPreset("letter");
-    expect(useEditorStore.getState().layoutResult?.pages).toHaveLength(2);
+    expect(useEditorStore.getState().layoutResult?.pages).toHaveLength(1);
 
     useEditorStore.getState().setPaperPreset("legal");
     const legalState = useEditorStore.getState();
@@ -217,5 +217,17 @@ describe("editor paper settings", () => {
       unplacedItems: [],
     });
   });
-});
 
+  it("uses edge-to-edge placement when cutting guides are enabled", () => {
+    useEditorStore.getState().setHorizontalSpacing(0.25);
+    useEditorStore.getState().setVerticalSpacing(0.25);
+    useEditorStore.getState().setCuttingGuidesEnabled(false);
+    useEditorStore.getState().setCuttingGuidesEnabled(true);
+
+    expect(useEditorStore.getState().paper).toMatchObject({
+      cuttingGuidesEnabled: true,
+      horizontalSpacing: 0,
+      verticalSpacing: 0,
+    });
+  });
+});

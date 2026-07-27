@@ -60,12 +60,6 @@ export function PhotoSizeItem({
         </Button>
       </div>
 
-      {item.passportPresetId ? (
-        <p className="font-technical mt-2 text-[9px] uppercase tracking-wide text-[var(--gray-500)]">
-          Passport preset
-        </p>
-      ) : null}
-
       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-[var(--gray-200)] pt-2">
         <Button
           type="button"

@@ -30,10 +30,9 @@ export const EDITOR_WORKSPACE_SESSION_VERSION = 1;
 const photoSizeItemSessionSchema = z.object({
   id: z.string().min(1),
   source: z
-    .enum(["standard", "custom", "passport", "service-set"])
+    .enum(["standard", "custom", "service-set"])
     .optional(),
   presetId: z.string().min(1).optional(),
-  passportPresetId: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(50),
   width: z.number().finite().positive(),
   height: z.number().finite().positive(),
@@ -94,7 +93,11 @@ export function createPersistedEditorWorkspace(
 ): PersistedEditorWorkspace {
   return {
     selectedServiceSetId: state.selectedServiceSetId,
-    photoSizes: state.photoSizes,
+    photoSizes: state.photoSizes.map((item) => {
+      const photoSize: PhotoSizeItem = { ...item };
+      delete photoSize.sourcePhotoId;
+      return photoSize;
+    }),
     paper: state.paper,
     customPaperPresets: state.customPaperPresets,
     cropMode: state.cropMode,

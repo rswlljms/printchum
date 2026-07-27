@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 
 import { CustomPaperDialog } from "@/components/editor/custom-paper-dialog";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/class-names";
 import type { MeasurementUnit } from "@/lib/layout-engine/types";
@@ -39,6 +40,7 @@ type PaperNumberFieldProps = {
   value: number;
   unit: MeasurementUnit;
   min?: number;
+  disabled?: boolean;
   onCommit: (value: number) => void;
 };
 
@@ -47,6 +49,7 @@ function PaperNumberField({
   value,
   unit,
   min = 0,
+  disabled = false,
   onCommit,
 }: PaperNumberFieldProps) {
   const displayValue = roundMeasurementForDisplay(value, unit);
@@ -59,9 +62,10 @@ function PaperNumberField({
           type="number"
           defaultValue={displayValue}
           min={min}
+          disabled={disabled}
           step="any"
           inputMode="decimal"
-          className="h-9 w-full rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-2.5 pr-9 text-xs text-[var(--ink)]"
+          className="h-9 w-full rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-2.5 pr-9 text-xs text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-55"
           aria-label={label}
           onBlur={(event) => onCommit(Number(event.currentTarget.value))}
           onKeyDown={(event) => {
@@ -154,7 +158,6 @@ export function PaperSettingsPanel() {
     (state) => state.applyCustomPaperPreset,
   );
   const [dialogState, setDialogState] = useState<DialogState>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const printableArea = calculatePrintableArea(paper);
   const editingPreset =
     dialogState?.mode === "edit"
@@ -280,7 +283,7 @@ export function PaperSettingsPanel() {
             </div>
             <label className="mt-3 block text-[11px] font-medium text-[var(--gray-600)]">
               Measurement unit
-              <select
+              <Select
                 value={paper.unit}
                 onChange={(event) =>
                   setPaperUnit(event.target.value as MeasurementUnit)
@@ -291,7 +294,7 @@ export function PaperSettingsPanel() {
                 <option value="in">Inches</option>
                 <option value="cm">Centimeters</option>
                 <option value="mm">Millimeters</option>
-              </select>
+              </Select>
             </label>
           </div>
 
@@ -329,17 +332,31 @@ export function PaperSettingsPanel() {
             <span aria-hidden="true" />
             <PaperNumberField
               label="Horizontal spacing"
-              value={paper.horizontalSpacing}
+              value={
+                paper.cuttingGuidesEnabled
+                  ? 0
+                  : paper.horizontalSpacing
+              }
               unit={paper.unit}
+              disabled={paper.cuttingGuidesEnabled}
               onCommit={setHorizontalSpacing}
             />
             <PaperNumberField
               label="Vertical spacing"
-              value={paper.verticalSpacing}
+              value={
+                paper.cuttingGuidesEnabled
+                  ? 0
+                  : paper.verticalSpacing
+              }
               unit={paper.unit}
+              disabled={paper.cuttingGuidesEnabled}
               onCommit={setVerticalSpacing}
             />
           </div>
+          <p className="text-[10px] leading-4 text-[var(--gray-500)]">
+            Guides use edge-to-edge placement. Turn Guides off to add custom
+            spacing.
+          </p>
 
           {layoutError ? (
             <div
@@ -466,15 +483,6 @@ export function PaperSettingsPanel() {
               </Button>
             </div>
 
-            {feedback ? (
-              <p
-                className="mt-3 rounded-lg border border-[var(--gray-300)] bg-[var(--ink)] px-3 py-2 text-xs text-[var(--inverted-ink)]"
-                role="status"
-              >
-                {feedback}
-              </p>
-            ) : null}
-
             {customPaperPresets.length === 0 ? (
               <div className="mt-3 rounded-lg border border-dashed border-[var(--gray-300)] p-3 text-center">
                 <p className="text-xs font-medium text-[var(--ink)]">
@@ -501,7 +509,6 @@ export function PaperSettingsPanel() {
                       className="w-full text-left"
                       onClick={() => {
                         applyCustomPaperPreset(preset.id);
-                        setFeedback(`${preset.name} applied.`);
                       }}
                       aria-label={`Apply ${preset.name}`}
                     >
@@ -543,7 +550,6 @@ export function PaperSettingsPanel() {
                         size="sm"
                         onClick={() => {
                           duplicateCustomPaperPreset(preset.id);
-                          setFeedback(`${preset.name} duplicated.`);
                         }}
                         aria-label={`Duplicate ${preset.name}`}
                       >
@@ -556,7 +562,6 @@ export function PaperSettingsPanel() {
                         size="sm"
                         onClick={() => {
                           removeCustomPaperPreset(preset.id);
-                          setFeedback(`${preset.name} deleted.`);
                         }}
                         aria-label={`Delete ${preset.name}`}
                       >
@@ -593,17 +598,11 @@ export function PaperSettingsPanel() {
                 dialogState.presetId,
                 toPresetInput(values),
               );
-              if (updated) {
-                setFeedback(`${values.name} updated.`);
-              }
               return updated;
             }
             const savedId = saveCustomPaperPreset(
               toPresetInput(values),
             );
-            if (savedId) {
-              setFeedback(`${values.name} saved.`);
-            }
             return Boolean(savedId);
           }}
         />

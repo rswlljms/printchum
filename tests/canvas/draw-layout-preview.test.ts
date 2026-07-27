@@ -141,4 +141,52 @@ describe("drawLayoutPreview", () => {
       expect.any(Number),
     );
   });
+
+  it("uses the photo assigned to each source item", () => {
+    const { context, drawImage } = createContext();
+    const firstImage = {} as CanvasImageSource;
+    const secondImage = {} as CanvasImageSource;
+    const createPhoto = (image: CanvasImageSource) => ({
+      image,
+      sourceWidth: 800,
+      sourceHeight: 800,
+      crop: {
+        xPercent: 0,
+        yPercent: 0,
+        widthPercent: 100,
+        heightPercent: 100,
+        zoom: 1,
+        rotation: 0,
+      },
+      cropMode: "fill-frame" as const,
+      referenceWidthInches: 1,
+    });
+
+    drawLayoutPreview({
+      context,
+      viewportWidth: 900,
+      viewportHeight: 700,
+      paperWidthInches: 8.5,
+      paperHeightInches: 11,
+      marginInches: 0.25,
+      layoutResult,
+      activePageIndex: 0,
+      previewScale: 1,
+      photo: null,
+      photos: {
+        "person-1": createPhoto(firstImage),
+        "person-2": createPhoto(secondImage),
+      },
+      itemSourcePhotoIds: {
+        small: "person-1",
+        large: "person-2",
+      },
+      cuttingGuides: false,
+      sizeLabels: false,
+      itemLabels: {},
+    });
+
+    expect(drawImage.mock.calls[0]?.[0]).toBe(firstImage);
+    expect(drawImage.mock.calls[1]?.[0]).toBe(secondImage);
+  });
 });

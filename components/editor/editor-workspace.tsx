@@ -1,14 +1,18 @@
 "use client";
 
-import { Download, Printer, RotateCcw } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ConfigurationPanel } from "@/components/editor/configuration-panel";
 import { LayoutCanvas } from "@/components/editor/layout-canvas";
+import { PdfExportDialog } from "@/components/editor/pdf-export-dialog";
 import { PreviewToolbar } from "@/components/editor/preview-toolbar";
+import {
+  PrintOptionsDialog,
+  type PrintPreviewConfiguration,
+} from "@/components/editor/print-options-dialog";
 import { SummaryPanel } from "@/components/editor/summary-panel";
 import { UnplacedItemsWarning } from "@/components/editor/unplaced-items-warning";
-import { Button } from "@/components/ui/button";
+import { PrintPreview } from "@/components/print/print-preview";
 import { Card, CardContent } from "@/components/ui/card";
 import { orientPaper } from "@/lib/layout-engine/paper-sizes";
 import { toInches } from "@/lib/layout-engine/units";
@@ -16,13 +20,23 @@ import { formatPhotoSizeLabel } from "@/features/editor/photo-sizes/conversions"
 import { useEditorStore } from "@/stores/editor-store";
 
 export function EditorWorkspace() {
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printConfiguration, setPrintConfiguration] =
+    useState<PrintPreviewConfiguration | null>(null);
   const paper = useEditorStore((state) => state.paper);
   const layoutResult = useEditorStore((state) => state.layoutResult);
   const activePageIndex = useEditorStore((state) => state.activePageIndex);
   const previewScale = useEditorStore((state) => state.previewScale);
   const sourceObjectUrl = useEditorStore((state) => state.sourceObjectUrl);
+  const sourcePhotos = useEditorStore((state) => state.sourcePhotos);
   const crop = useEditorStore((state) => state.crop);
   const cropMode = useEditorStore((state) => state.cropMode);
+  const backgroundMode = useEditorStore((state) => state.backgroundMode);
+  const backgroundColor = useEditorStore((state) => state.backgroundColor);
+  const backgroundRemoved = useEditorStore(
+    (state) => state.backgroundRemoved,
+  );
   const photoSizes = useEditorStore((state) => state.photoSizes);
   const setActivePage = useEditorStore((state) => state.setActivePage);
   const setPreviewScale = useEditorStore((state) => state.setPreviewScale);
@@ -82,32 +96,32 @@ export function EditorWorkspace() {
       ),
     [photoSizes],
   );
+  const itemSourcePhotoIds = useMemo(
+    () =>
+      Object.fromEntries(
+        photoSizes.map((photoSize) => [
+          photoSize.id,
+          photoSize.sourcePhotoId,
+        ]),
+      ),
+    [photoSizes],
+  );
+  const outputReady =
+    Boolean(layoutResult) &&
+    (layoutResult?.placedItems ?? 0) > 0 &&
+    sourcePhotos.length > 0;
 
   return (
     <div
       className="page-enter mx-auto max-w-[1800px] p-4 sm:p-6"
     >
-      <div className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--gray-200)] pb-6 xl:flex-row xl:items-end">
+      <div className="mb-8 border-b border-[var(--gray-200)] pb-6">
         <div>
           <p className="micro-label">01 — editor</p>
           <h2 className="font-display mt-2 text-4xl leading-none text-[var(--ink)]">Create Layout</h2>
           <p className="mt-3 text-sm text-[var(--gray-500)]">
             Configure a print sheet and preview deterministic placement in real time.
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={resetEditor}>
-            <RotateCcw className="size-4" />
-            Reset
-          </Button>
-          <Button variant="outline" disabled title="Print output is planned for a later phase">
-            <Printer className="size-4" />
-            Print
-          </Button>
-          <Button disabled title="PDF export is planned for a later phase">
-            <Download className="size-4" />
-            Download PDF
-          </Button>
         </div>
       </div>
 
@@ -128,6 +142,10 @@ export function EditorWorkspace() {
               utilizationPercent={layoutResult?.utilizationPercent ?? 0}
               onPageChange={setActivePage}
               onScaleChange={setPreviewScale}
+              outputReady={outputReady}
+              onReset={resetEditor}
+              onPrint={() => setPrintDialogOpen(true)}
+              onDownload={() => setPdfDialogOpen(true)}
             />
             <LayoutCanvas
               paperWidthInches={orientedPaper.widthInches}
@@ -137,16 +155,21 @@ export function EditorWorkspace() {
               activePageIndex={activePageIndex}
               previewScale={previewScale}
               sourceObjectUrl={sourceObjectUrl}
+              sourcePhotos={sourcePhotos}
+              itemSourcePhotoIds={itemSourcePhotoIds}
               crop={crop}
               cropMode={cropMode}
               referenceWidthInches={referencePhotoWidthInches}
               cuttingGuides={paper.cuttingGuidesEnabled}
               sizeLabels={paper.sizeLabelsEnabled}
+              backgroundMode={backgroundMode}
+              backgroundColor={backgroundColor}
+              backgroundRemoved={backgroundRemoved}
               itemLabels={itemLabels}
               itemNameplates={itemNameplates}
             />
             <div className="font-technical flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
-              <span>Screen preview · physical output is not implemented yet</span>
+              <span>Screen preview · PDF and print use this LayoutResult</span>
               <span>
                 {orientedPaper.widthInches.toFixed(2)} × {orientedPaper.heightInches.toFixed(2)} in ·{" "}
                 {(layoutResult?.utilizationPercent ?? 0).toFixed(1)}% utilized
@@ -157,6 +180,28 @@ export function EditorWorkspace() {
 
         <SummaryPanel />
       </div>
+      {pdfDialogOpen ? (
+        <PdfExportDialog
+          open
+          onOpenChange={setPdfDialogOpen}
+        />
+      ) : null}
+      {printDialogOpen ? (
+        <PrintOptionsDialog
+          open
+          onOpenChange={setPrintDialogOpen}
+          onContinue={(configuration) => {
+            setPrintDialogOpen(false);
+            setPrintConfiguration(configuration);
+          }}
+        />
+      ) : null}
+      {printConfiguration ? (
+        <PrintPreview
+          configuration={printConfiguration}
+          onClose={() => setPrintConfiguration(null)}
+        />
+      ) : null}
     </div>
   );
 }

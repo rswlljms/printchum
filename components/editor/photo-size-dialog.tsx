@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export function PhotoSizeDialog({
 }: PhotoSizeDialogProps) {
   const previousUnit = useRef<MeasurementUnit>(defaultValues.unit);
   const {
+    control,
     formState: { errors },
     getValues,
     handleSubmit,
@@ -83,6 +85,7 @@ export function PhotoSizeDialog({
   }
 
   const unitRegistration = register("unit");
+  const unit = useWatch({ control, name: "unit" });
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -168,8 +171,9 @@ export function PhotoSizeDialog({
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-xs font-medium text-[var(--gray-700)]">
                 Unit
-                <select
+                <Select
                   {...unitRegistration}
+                  value={unit}
                   className={fieldClassName}
                   onChange={(event) => {
                     const nextUnit = event.target.value as MeasurementUnit;
@@ -206,7 +210,7 @@ export function PhotoSizeDialog({
                   <option value="in">Inches</option>
                   <option value="cm">Centimeters</option>
                   <option value="mm">Millimeters</option>
-                </select>
+                </Select>
               </label>
               <label className="block text-xs font-medium text-[var(--gray-700)]">
                 Quantity

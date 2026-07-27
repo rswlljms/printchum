@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,7 @@ export function CustomPaperDialog({
   const previousUnit = useRef<MeasurementUnit>(defaultValues.unit);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const {
+    control,
     formState: { errors, isSubmitting },
     getValues,
     handleSubmit,
@@ -73,6 +75,12 @@ export function CustomPaperDialog({
   }, [defaultValues, open, reset]);
 
   const unitRegistration = register("unit");
+  const unit = useWatch({ control, name: "unit" });
+  const orientation = useWatch({ control, name: "orientation" });
+  const autoArrangeMode = useWatch({
+    control,
+    name: "autoArrangeMode",
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,8 +174,9 @@ export function CustomPaperDialog({
 
             <label className="block text-xs font-medium text-[var(--gray-700)]">
               Unit
-              <select
+              <Select
                 {...unitRegistration}
+                value={unit}
                 className={fieldClassName}
                 onChange={(event) => {
                   const nextUnit = event.target.value as MeasurementUnit;
@@ -193,19 +202,20 @@ export function CustomPaperDialog({
                 <option value="in">Inches</option>
                 <option value="cm">Centimeters</option>
                 <option value="mm">Millimeters</option>
-              </select>
+              </Select>
             </label>
 
             <label className="block text-xs font-medium text-[var(--gray-700)]">
               Default orientation
-              <select
+              <Select
                 {...register("orientation")}
+                value={orientation}
                 className={fieldClassName}
                 aria-label="Default orientation"
               >
                 <option value="portrait">Portrait</option>
                 <option value="landscape">Landscape</option>
-              </select>
+              </Select>
             </label>
 
             <label className="flex items-center gap-2 text-xs text-[var(--gray-700)]">
@@ -234,14 +244,15 @@ export function CustomPaperDialog({
             </label>
             <label className="block text-xs font-medium text-[var(--gray-700)]">
               Auto-arrange mode
-              <select
+              <Select
                 {...register("autoArrangeMode")}
+                value={autoArrangeMode}
                 className={fieldClassName}
                 aria-label="Auto-arrange mode"
               >
                 <option value="auto">Auto</option>
                 <option value="grid">Grid</option>
-              </select>
+              </Select>
             </label>
           </div>
 

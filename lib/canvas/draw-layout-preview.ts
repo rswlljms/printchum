@@ -31,8 +31,13 @@ export type DrawLayoutPreviewInput = {
   panOffsetX?: number;
   panOffsetY?: number;
   photo: PreviewPhoto | null;
+  photos?: Readonly<Record<string, PreviewPhoto>>;
+  itemSourcePhotoIds?: Readonly<Record<string, string | undefined>>;
   cuttingGuides: boolean;
   sizeLabels: boolean;
+  backgroundMode?: "original" | "transparent" | "solid";
+  backgroundColor?: string;
+  backgroundRemoved?: boolean;
   itemLabels: Readonly<Record<string, string>>;
   itemNameplates?: Readonly<Record<string, NameplateSettings | undefined>>;
 };
@@ -163,6 +168,9 @@ function drawPhoto(
   photo: PreparedPhoto,
   destination: Rectangle,
   pixelsPerInch: number,
+  backgroundMode: "original" | "transparent" | "solid",
+  backgroundColor: string,
+  backgroundRemoved: boolean,
 ): void {
   const cropRectangle = normalizedCropToSourceRectangle(
     photo.width,
@@ -197,13 +205,23 @@ function drawPhoto(
     destination.height,
   );
   context.clip();
-  context.fillStyle = "#ffffff";
-  context.fillRect(
-    destination.x,
-    destination.y,
-    destination.width,
-    destination.height,
-  );
+  if (backgroundMode === "solid") {
+    context.fillStyle = backgroundColor;
+    context.fillRect(
+      destination.x,
+      destination.y,
+      destination.width,
+      destination.height,
+    );
+  } else if (backgroundMode !== "transparent" || !backgroundRemoved) {
+    context.fillStyle = "#ffffff";
+    context.fillRect(
+      destination.x,
+      destination.y,
+      destination.width,
+      destination.height,
+    );
+  }
   context.drawImage(
     photo.image,
     source.x,
@@ -356,6 +374,9 @@ function drawPlacedItem(
   sizeLabel: string,
   showSizeLabel: boolean,
   nameplate: NameplateSettings | undefined,
+  backgroundMode: "original" | "transparent" | "solid",
+  backgroundColor: string,
+  backgroundRemoved: boolean,
 ): Rectangle {
   const placedRectangle = {
     x: paperX + item.xInches * pixelsPerInch,
@@ -429,7 +450,15 @@ function drawPlacedItem(
       : null;
 
   if (photo) {
-    drawPhoto(context, photo, photoRectangle, pixelsPerInch);
+    drawPhoto(
+      context,
+      photo,
+      photoRectangle,
+      pixelsPerInch,
+      backgroundMode,
+      backgroundColor,
+      backgroundRemoved,
+    );
   } else {
     drawPhotoPlaceholder(context, photoRectangle);
   }
@@ -501,8 +530,13 @@ export function drawLayoutPreview({
   panOffsetX = 0,
   panOffsetY = 0,
   photo,
+  photos = {},
+  itemSourcePhotoIds = {},
   cuttingGuides,
   sizeLabels,
+  backgroundMode = "original",
+  backgroundColor = "#ffffff",
+  backgroundRemoved = false,
   itemLabels,
   itemNameplates = {},
 }: DrawLayoutPreviewInput): void {
@@ -543,8 +577,10 @@ export function drawLayoutPreview({
     return;
   }
 
-  const preparedPhoto = photo ? prepareRotatedPhoto(photo) : null;
   for (const item of page.items) {
+    const sourcePhotoId = itemSourcePhotoIds[item.sourceItemId];
+    const itemPhoto = sourcePhotoId ? photos[sourcePhotoId] : photo;
+    const preparedPhoto = itemPhoto ? prepareRotatedPhoto(itemPhoto) : null;
     const rectangle = drawPlacedItem(
       context,
       item,
@@ -555,6 +591,9 @@ export function drawLayoutPreview({
       itemLabels[item.sourceItemId] ?? item.sourceItemId,
       sizeLabels,
       itemNameplates[item.sourceItemId],
+      backgroundMode,
+      backgroundColor,
+      backgroundRemoved,
     );
     if (cuttingGuides) {
       drawCuttingGuides(context, rectangle);

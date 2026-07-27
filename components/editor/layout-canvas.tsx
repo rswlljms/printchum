@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { drawLayoutPreview } from "@/lib/canvas/draw-layout-preview";
-import type { CropMode, CropState } from "@/features/editor/types";
+import type {
+  CropMode,
+  CropState,
+  SourcePhoto,
+} from "@/features/editor/types";
 import type { LayoutResult } from "@/lib/layout-engine/types";
 import type { NameplateSettings } from "@/lib/nameplates/types";
 
@@ -15,11 +19,16 @@ type LayoutCanvasProps = {
   activePageIndex: number;
   previewScale: number;
   sourceObjectUrl: string | null;
+  sourcePhotos?: SourcePhoto[];
+  itemSourcePhotoIds?: Readonly<Record<string, string | undefined>>;
   crop: CropState;
   cropMode: CropMode;
   referenceWidthInches: number;
   cuttingGuides: boolean;
   sizeLabels: boolean;
+  backgroundMode: "original" | "transparent" | "solid";
+  backgroundColor: string;
+  backgroundRemoved: boolean;
   itemLabels: Readonly<Record<string, string>>;
   itemNameplates: Readonly<Record<string, NameplateSettings | undefined>>;
 };
@@ -72,6 +81,17 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     width: number;
     height: number;
   } | null>(null);
+  const loadedPhotosRef = useRef<
+    Map<
+      string,
+      {
+        objectUrl: string;
+        image: HTMLImageElement;
+        width: number;
+        height: number;
+      }
+    >
+  >(new Map());
   const [imageRevision, setImageRevision] = useState(0);
   const [panOffset, setPanOffset] = useState<PreviewPanOffset>({
     x: 0,
@@ -87,11 +107,16 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     activePageIndex,
     previewScale,
     sourceObjectUrl,
+    sourcePhotos = [],
+    itemSourcePhotoIds = {},
     crop,
     cropMode,
     referenceWidthInches,
     cuttingGuides,
     sizeLabels,
+    backgroundMode,
+    backgroundColor,
+    backgroundRemoved,
     itemLabels,
     itemNameplates,
   } = props;
@@ -129,6 +154,50 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
   }, [sourceObjectUrl]);
 
   useEffect(() => {
+    let isActive = true;
+    const loadedPhotos = loadedPhotosRef.current;
+    const activeIds = new Set(sourcePhotos.map((photo) => photo.id));
+    for (const id of loadedPhotos.keys()) {
+      if (!activeIds.has(id)) {
+        loadedPhotos.delete(id);
+      }
+    }
+
+    const images = sourcePhotos.map((photo) => {
+      const current = loadedPhotos.get(photo.id);
+      if (current?.objectUrl === photo.objectUrl) {
+        return null;
+      }
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => {
+        if (!isActive) {
+          return;
+        }
+        loadedPhotos.set(photo.id, {
+          objectUrl: photo.objectUrl,
+          image,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        });
+        setImageRevision((revision) => revision + 1);
+      };
+      image.src = photo.objectUrl;
+      return image;
+    });
+
+    return () => {
+      isActive = false;
+      images.forEach((image) => {
+        if (image) {
+          image.onload = null;
+          image.onerror = null;
+        }
+      });
+    };
+  }, [sourcePhotos]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container || !layoutResult) {
@@ -155,6 +224,26 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       }
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       const loadedPhoto = loadedPhotoRef.current;
+      const photos = Object.fromEntries(
+        sourcePhotos.flatMap((sourcePhoto) => {
+          const loaded = loadedPhotosRef.current.get(sourcePhoto.id);
+          return loaded?.objectUrl === sourcePhoto.objectUrl
+            ? [
+                [
+                  sourcePhoto.id,
+                  {
+                    image: loaded.image,
+                    sourceWidth: loaded.width,
+                    sourceHeight: loaded.height,
+                    crop: sourcePhoto.crop,
+                    cropMode: sourcePhoto.cropMode,
+                    referenceWidthInches,
+                  },
+                ],
+              ]
+            : [];
+        }),
+      );
       const clampedPanOffset = clampPreviewPan(
         panOffset,
         viewportWidth,
@@ -186,8 +275,13 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
                 referenceWidthInches,
               }
             : null,
+        photos,
+        itemSourcePhotoIds,
         cuttingGuides,
         sizeLabels,
+        backgroundMode,
+        backgroundColor,
+        backgroundRemoved,
         itemLabels,
         itemNameplates,
       });
@@ -214,12 +308,16 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     };
   }, [
     activePageIndex,
+    backgroundColor,
+    backgroundMode,
+    backgroundRemoved,
     crop,
     cropMode,
     cuttingGuides,
     imageRevision,
     itemLabels,
     itemNameplates,
+    itemSourcePhotoIds,
     layoutResult,
     marginInches,
     paperHeightInches,
@@ -229,6 +327,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     referenceWidthInches,
     sizeLabels,
     sourceObjectUrl,
+    sourcePhotos,
   ]);
 
   function updatePanOffset(
