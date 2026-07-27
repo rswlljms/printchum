@@ -139,6 +139,10 @@ test("opens a private print preview with scale guidance and no app navigation", 
   await page.getByRole("button", { name: "Print", exact: true }).click();
   const options = page.getByRole("dialog", { name: "Print Layout" });
   await expect(options).toContainText("100% or Actual Size");
+  await expect(options.getByText("Printed details")).toHaveCount(0);
+  await expect(options).toContainText(
+    "Print uses the current layout settings for guides, labels, nameplates, and background.",
+  );
   await expect(options).toContainText(
     "Your print layout remains in this browser session.",
   );
@@ -152,8 +156,18 @@ test("opens a private print preview with scale guidance and no app navigation", 
   await expect(preview).toBeVisible();
   await expect(preview.getByRole("heading", { name: "Print preview" })).toBeVisible();
   await expect(preview.getByLabel("Print preview page 1")).toBeVisible();
-  await expect(preview).toContainText("100% or Actual Size");
+  await expect(preview).toContainText("100% / Actual Size");
+  await expect(preview.getByRole("region", { name: "Print setup guide" })).toContainText(
+    "Layout spacing",
+  );
+  await expect(preview).toContainText("Printer margins");
   await expect(preview.getByRole("navigation")).toHaveCount(0);
+  await page.emulateMedia({ media: "print" });
+  await expect(
+    page.getByRole("heading", { name: "PrintChum Workspace" }),
+  ).toBeHidden();
+  await expect(preview.getByLabel("Print preview page 1")).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
   await preview.getByRole("button", { name: "Close" }).click();
   await expect(preview).toBeHidden();
 });

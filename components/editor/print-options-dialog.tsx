@@ -3,10 +3,7 @@
 import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import {
-  ExportOptionToggles,
-  type ExportToggleOptions,
-} from "@/components/editor/export-option-toggles";
+import type { ExportToggleOptions } from "@/components/editor/export-option-toggles";
 import { ExportWarningList } from "@/components/editor/export-warning-list";
 import {
   PageRangeControl,
@@ -52,12 +49,18 @@ export function PrintOptionsDialog({
         ? `1-${state.layoutResult.pages.length}`
         : "1",
   );
-  const [toggles, setToggles] = useState<ExportToggleOptions>({
-    includeCuttingGuides: state.paper.cuttingGuidesEnabled,
-    includeSizeLabels: state.paper.sizeLabelsEnabled,
-    includeNameplates: true,
-    includeBackground: true,
-  });
+  const printOptions = useMemo<ExportToggleOptions>(
+    () => ({
+      includeCuttingGuides: state.paper.cuttingGuidesEnabled,
+      includeSizeLabels: state.paper.sizeLabelsEnabled,
+      includeNameplates: true,
+      includeBackground: true,
+    }),
+    [
+      state.paper.cuttingGuidesEnabled,
+      state.paper.sizeLabelsEnabled,
+    ],
+  );
   const totalPages = state.layoutResult?.pages.length ?? 0;
   const selected = resolveSelectedPageIndexes(
     selection,
@@ -105,7 +108,7 @@ export function PrintOptionsDialog({
         cropMode: photo.cropMode,
       })),
       options: {
-        ...toggles,
+        ...printOptions,
         outputQuality: "high",
         jpegQuality: 0.95,
         pageIndexes: selected.pageIndexes,
@@ -125,42 +128,42 @@ export function PrintOptionsDialog({
         warnings: [] as string[],
       };
     }
-  }, [selected.error, selected.pageIndexes, state, toggles]);
+  }, [printOptions, selected.error, selected.pageIndexes, state]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <p className="micro-label">09 — physical output</p>
           <DialogTitle>Print Layout</DialogTitle>
           <DialogDescription>
-            Review the pages and printed details before opening the browser
-            print dialog.
+            Review the selected pages before opening the browser print dialog.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--gray-200)] p-3 text-xs">
-              <span className="text-[var(--gray-500)]">Paper</span>
-              <strong className="text-right">{state.paper.name}</strong>
-              <span className="text-[var(--gray-500)]">Orientation</span>
-              <strong className="text-right capitalize">
-                {state.paper.orientation}
-              </strong>
-              <span className="text-[var(--gray-500)]">Pages</span>
-              <strong className="text-right">{totalPages}</strong>
-            </div>
-            <PageRangeControl
-              selection={selection}
-              customRange={customRange}
-              currentPageIndex={state.activePageIndex}
-              totalPages={totalPages}
-              onSelectionChange={setSelection}
-              onCustomRangeChange={setCustomRange}
-            />
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--gray-200)] p-3 text-xs">
+            <span className="text-[var(--gray-500)]">Paper</span>
+            <strong className="text-right">{state.paper.name}</strong>
+            <span className="text-[var(--gray-500)]">Orientation</span>
+            <strong className="text-right capitalize">
+              {state.paper.orientation}
+            </strong>
+            <span className="text-[var(--gray-500)]">Pages</span>
+            <strong className="text-right">{totalPages}</strong>
           </div>
-          <ExportOptionToggles value={toggles} onChange={setToggles} />
+          <PageRangeControl
+            selection={selection}
+            customRange={customRange}
+            currentPageIndex={state.activePageIndex}
+            totalPages={totalPages}
+            onSelectionChange={setSelection}
+            onCustomRangeChange={setCustomRange}
+          />
+          <p className="text-xs leading-5 text-[var(--gray-500)]">
+            Print uses the current layout settings for guides, labels,
+            nameplates, and background.
+          </p>
         </div>
 
         <ExportWarningList warnings={validation.warnings} />
@@ -200,7 +203,7 @@ export function PrintOptionsDialog({
             disabled={Boolean(validation.error)}
             onClick={() =>
               onContinue({
-                ...toggles,
+                ...printOptions,
                 pageIndexes: selected.pageIndexes,
               })
             }

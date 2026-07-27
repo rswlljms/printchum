@@ -7,7 +7,14 @@ import {
   Printer,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 
 import type { PrintPreviewConfiguration } from "@/components/editor/print-options-dialog";
 import { PrintPreviewCanvas } from "@/components/print/print-preview-canvas";
@@ -25,6 +32,10 @@ type PrintPreviewProps = {
   onClose: () => void;
 };
 
+const subscribeToClient = (): (() => void) => () => {};
+const getClientSnapshot = (): boolean => true;
+const getServerSnapshot = (): boolean => false;
+
 export function PrintPreview({
   configuration,
   onClose,
@@ -33,6 +44,11 @@ export function PrintPreview({
   const [selectedOffset, setSelectedOffset] = useState(0);
   const [printing, setPrinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mounted = useSyncExternalStore(
+    subscribeToClient,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const printSession = useRef<PrintSession | null>(null);
   const pageIndex =
     configuration.pageIndexes[selectedOffset] ??
@@ -81,6 +97,10 @@ export function PrintPreview({
       printSession.current?.dispose();
     };
   }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   async function handlePrint(): Promise<void> {
     if (
@@ -144,7 +164,7 @@ export function PrintPreview({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[80] flex flex-col bg-[var(--background)]"
       role="dialog"
@@ -262,11 +282,44 @@ export function PrintPreview({
             {error}
           </p>
         ) : null}
-        <p className="mt-4 max-w-2xl text-center text-xs text-[var(--gray-600)]">
-          Print at 100% or Actual Size, disable Fit to Page, and confirm that
-          the printer paper matches {state.paper.name}.
-        </p>
+        <section
+          className="mt-6 w-full max-w-2xl rounded-2xl border border-[var(--gray-200)] bg-[var(--surface)] p-4"
+          aria-label="Print setup guide"
+          data-print-guide
+        >
+          <p className="micro-label">Print setup guide</p>
+          <div className="mt-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Scale</span>
+              <strong>100% / Actual Size</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Fit to Page</span>
+              <strong>Off</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Printer margins</span>
+              <strong>None</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Headers / footers</span>
+              <strong>Off</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Paper</span>
+              <strong>{state.paper.name}</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--gray-500)]">Layout spacing</span>
+              <strong>
+                {state.paper.horizontalSpacing} ×{" "}
+                {state.paper.verticalSpacing} {state.paper.unit}
+              </strong>
+            </div>
+          </div>
+        </section>
       </main>
-    </div>
+    </div>,
+    document.body,
   );
 }

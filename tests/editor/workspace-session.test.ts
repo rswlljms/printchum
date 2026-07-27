@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   EDITOR_WORKSPACE_SESSION_VERSION,
   createPersistedEditorWorkspace,
+  migrateLegacyGuideSpacing,
   parseEditorWorkspaceSessionStorage,
   parsePersistedEditorWorkspace,
 } from "@/features/editor/workspace-session";
@@ -56,6 +57,25 @@ describe("editor workspace session persistence", () => {
         },
       }),
     ).toBeNull();
+  });
+
+  it("restores guide spacing from legacy edge-to-edge sessions", () => {
+    useEditorStore.getState().resetEditor();
+    const persisted = createPersistedEditorWorkspace(
+      useEditorStore.getState(),
+    );
+    const migrated = migrateLegacyGuideSpacing({
+      ...persisted,
+      paper: {
+        ...persisted.paper,
+        cuttingGuidesEnabled: true,
+        horizontalSpacing: 0,
+        verticalSpacing: 0,
+      },
+    });
+
+    expect(migrated.paper.horizontalSpacing).toBe(0.125);
+    expect(migrated.paper.verticalSpacing).toBe(0.125);
   });
 
   it("rejects duplicate custom preset IDs from external session data", () => {

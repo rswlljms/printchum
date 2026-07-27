@@ -11,8 +11,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "office",
     defaultOrientation: "portrait",
     defaultMargin: 0.25,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 0.125,
+    defaultVerticalSpacing: 0.125,
   },
   {
     id: "legal",
@@ -24,8 +24,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "office",
     defaultOrientation: "portrait",
     defaultMargin: 0.25,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 0.125,
+    defaultVerticalSpacing: 0.125,
   },
   {
     id: "a4",
@@ -37,8 +37,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "office",
     defaultOrientation: "portrait",
     defaultMargin: 5,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 3,
+    defaultVerticalSpacing: 3,
   },
   {
     id: "a3",
@@ -50,8 +50,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "office",
     defaultOrientation: "portrait",
     defaultMargin: 5,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 3,
+    defaultVerticalSpacing: 3,
   },
   {
     id: "4r",
@@ -63,8 +63,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "photo",
     defaultOrientation: "portrait",
     defaultMargin: 0.125,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 0.0625,
+    defaultVerticalSpacing: 0.0625,
   },
   {
     id: "5r",
@@ -76,8 +76,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "photo",
     defaultOrientation: "portrait",
     defaultMargin: 0.125,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 0.0625,
+    defaultVerticalSpacing: 0.0625,
   },
   {
     id: "custom",
@@ -89,8 +89,8 @@ export const paperPresets: readonly PaperPreset[] = [
     category: "custom",
     defaultOrientation: "portrait",
     defaultMargin: 0.25,
-    defaultHorizontalSpacing: 0,
-    defaultVerticalSpacing: 0,
+    defaultHorizontalSpacing: 0.1,
+    defaultVerticalSpacing: 0.1,
   },
 ] as const;
 

@@ -128,9 +128,7 @@ test("creates, applies, duplicates, renames, and deletes session-only custom pap
     .fill("0.2");
   await createDialog.getByRole("button", { name: "Save preset" }).click();
 
-  await expect(page.getByRole("status")).toContainText(
-    "Studio Sheet saved.",
-  );
+  await expect(createDialog).toBeHidden();
   const summary = page.getByRole("complementary", {
     name: "Layout summary",
   });

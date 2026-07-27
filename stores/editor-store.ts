@@ -12,6 +12,7 @@ import {
   EDITOR_WORKSPACE_SESSION_KEY,
   EDITOR_WORKSPACE_SESSION_VERSION,
   createPersistedEditorWorkspace,
+  migrateLegacyGuideSpacing,
   parseEditorWorkspaceSessionStorage,
   parsePersistedEditorWorkspace,
   type PersistedEditorWorkspace,
@@ -292,18 +293,14 @@ function calculateEditorLayout(state: EditorState): Pick<EditorState, "layoutRes
         orientation: state.paper.orientation,
       },
       marginInches: toInches(state.paper.margin, state.paper.unit),
-      horizontalSpacingInches: state.paper.cuttingGuidesEnabled
-        ? 0
-        : toInches(
-            state.paper.horizontalSpacing,
-            state.paper.unit,
-          ),
-      verticalSpacingInches: state.paper.cuttingGuidesEnabled
-        ? 0
-        : toInches(
-            state.paper.verticalSpacing,
-            state.paper.unit,
-          ),
+      horizontalSpacingInches: toInches(
+        state.paper.horizontalSpacing,
+        state.paper.unit,
+      ),
+      verticalSpacingInches: toInches(
+        state.paper.verticalSpacing,
+        state.paper.unit,
+      ),
       items: state.photoSizes.map((item) => ({
         id: item.id,
         widthInches: toInches(item.width, item.unit),
@@ -792,12 +789,6 @@ export const useEditorStore = create<EditorStore>()(
       const paper = {
         ...state.paper,
         cuttingGuidesEnabled,
-        ...(cuttingGuidesEnabled
-          ? {
-              horizontalSpacing: 0,
-              verticalSpacing: 0,
-            }
-          : {}),
       };
       return {
         ...updatePaperAndLayout(state, paper),
@@ -1521,6 +1512,16 @@ export const useEditorStore = create<EditorStore>()(
             : window.sessionStorage,
       ),
       partialize: (state) => createPersistedEditorWorkspace(state),
+      migrate: (persistedState, version) => {
+        const restoredWorkspace =
+          parsePersistedEditorWorkspace(persistedState);
+        if (!restoredWorkspace) {
+          return persistedState as PersistedEditorWorkspace;
+        }
+        return version < EDITOR_WORKSPACE_SESSION_VERSION
+          ? migrateLegacyGuideSpacing(restoredWorkspace)
+          : restoredWorkspace;
+      },
       merge: (persistedState, currentState) => {
         const restoredWorkspace =
           parsePersistedEditorWorkspace(persistedState);

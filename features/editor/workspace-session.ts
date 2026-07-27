@@ -6,6 +6,8 @@ import type {
   PhotoSizeItem,
 } from "@/features/editor/types";
 import { paperSettingsSchema } from "@/lib/paper/schemas";
+import { fromInches } from "@/lib/paper/conversions";
+import { findPaperPreset } from "@/lib/paper/presets";
 import { nameplateSettingsSchema } from "@/lib/nameplates/schemas";
 import type {
   CustomPaperPreset,
@@ -25,7 +27,7 @@ export type PersistedEditorWorkspace = Pick<
 
 export const EDITOR_WORKSPACE_SESSION_KEY =
   "printchum-editor-workspace";
-export const EDITOR_WORKSPACE_SESSION_VERSION = 1;
+export const EDITOR_WORKSPACE_SESSION_VERSION = 2;
 
 const photoSizeItemSessionSchema = z.object({
   id: z.string().min(1),
@@ -70,8 +72,39 @@ const workspaceSessionEnvelopeSchema = z.object({
 
 const persistedStorageEnvelopeSchema = z.object({
   state: z.unknown(),
-  version: z.literal(EDITOR_WORKSPACE_SESSION_VERSION),
+  version: z.union([
+    z.literal(1),
+    z.literal(EDITOR_WORKSPACE_SESSION_VERSION),
+  ]),
 });
+
+export function migrateLegacyGuideSpacing(
+  workspace: PersistedEditorWorkspace,
+): PersistedEditorWorkspace {
+  if (
+    !workspace.paper.cuttingGuidesEnabled ||
+    workspace.paper.horizontalSpacing !== 0 ||
+    workspace.paper.verticalSpacing !== 0
+  ) {
+    return workspace;
+  }
+
+  const preset = workspace.paper.presetId
+    ? findPaperPreset(workspace.paper.presetId)
+    : undefined;
+  return {
+    ...workspace,
+    paper: {
+      ...workspace.paper,
+      horizontalSpacing:
+        preset?.defaultHorizontalSpacing ??
+        fromInches(0.1, workspace.paper.unit),
+      verticalSpacing:
+        preset?.defaultVerticalSpacing ??
+        fromInches(0.1, workspace.paper.unit),
+    },
+  };
+}
 
 function parseCustomPaperPreset(
   value: unknown,
@@ -169,7 +202,13 @@ export function parseEditorWorkspaceSessionStorage(
     if (!envelope.success) {
       return null;
     }
-    return parsePersistedEditorWorkspace(envelope.data.state);
+    const workspace = parsePersistedEditorWorkspace(envelope.data.state);
+    if (!workspace) {
+      return null;
+    }
+    return envelope.data.version === 1
+      ? migrateLegacyGuideSpacing(workspace)
+      : workspace;
   } catch {
     return null;
   }

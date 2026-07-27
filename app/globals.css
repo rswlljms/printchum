@@ -335,8 +335,12 @@ select:focus-visible {
     background: #ffffff;
   }
 
+  body > *:not([data-testid="print-preview"]) {
+    display: none !important;
+  }
+
   [data-testid="print-preview"] > header,
-  [data-testid="print-preview"] p {
+  [data-print-guide] {
     display: none !important;
   }
 
@@ -350,8 +354,11 @@ select:focus-visible {
   }
 
   [data-testid="print-preview"] canvas {
-    width: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
     max-width: none !important;
+    max-height: none !important;
     box-shadow: none !important;
     break-after: page;
   }

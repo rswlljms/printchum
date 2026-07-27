@@ -332,30 +332,19 @@ export function PaperSettingsPanel() {
             <span aria-hidden="true" />
             <PaperNumberField
               label="Horizontal spacing"
-              value={
-                paper.cuttingGuidesEnabled
-                  ? 0
-                  : paper.horizontalSpacing
-              }
+              value={paper.horizontalSpacing}
               unit={paper.unit}
-              disabled={paper.cuttingGuidesEnabled}
               onCommit={setHorizontalSpacing}
             />
             <PaperNumberField
               label="Vertical spacing"
-              value={
-                paper.cuttingGuidesEnabled
-                  ? 0
-                  : paper.verticalSpacing
-              }
+              value={paper.verticalSpacing}
               unit={paper.unit}
-              disabled={paper.cuttingGuidesEnabled}
               onCommit={setVerticalSpacing}
             />
           </div>
           <p className="text-[10px] leading-4 text-[var(--gray-500)]">
-            Guides use edge-to-edge placement. Turn Guides off to add custom
-            spacing.
+            Spacing leaves room between photos for visible cutting guides.
           </p>
 
           {layoutError ? (

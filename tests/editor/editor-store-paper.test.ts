@@ -35,7 +35,7 @@ describe("editor paper settings", () => {
     useEditorStore.getState().resetEditor();
   });
 
-  it("applies edge-to-edge standard presets and recalculates layout", () => {
+  it("applies guide-friendly standard preset spacing and recalculates layout", () => {
     useEditorStore.getState().addCustomPhotoSize({
       name: "2 × 2",
       width: 2,
@@ -47,7 +47,11 @@ describe("editor paper settings", () => {
     });
 
     useEditorStore.getState().setPaperPreset("letter");
-    expect(useEditorStore.getState().layoutResult?.pages).toHaveLength(1);
+    expect(useEditorStore.getState().paper).toMatchObject({
+      horizontalSpacing: 0.125,
+      verticalSpacing: 0.125,
+    });
+    expect(useEditorStore.getState().layoutResult?.pages).toHaveLength(2);
 
     useEditorStore.getState().setPaperPreset("legal");
     const legalState = useEditorStore.getState();
@@ -218,7 +222,7 @@ describe("editor paper settings", () => {
     });
   });
 
-  it("uses edge-to-edge placement when cutting guides are enabled", () => {
+  it("preserves photo spacing when cutting guides are enabled", () => {
     useEditorStore.getState().setHorizontalSpacing(0.25);
     useEditorStore.getState().setVerticalSpacing(0.25);
     useEditorStore.getState().setCuttingGuidesEnabled(false);
@@ -226,8 +230,8 @@ describe("editor paper settings", () => {
 
     expect(useEditorStore.getState().paper).toMatchObject({
       cuttingGuidesEnabled: true,
-      horizontalSpacing: 0,
-      verticalSpacing: 0,
+      horizontalSpacing: 0.25,
+      verticalSpacing: 0.25,
     });
   });
 });

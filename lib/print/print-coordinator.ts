@@ -9,7 +9,15 @@ export function printPdfResult(result: PdfExportResult): Promise<PrintSession> {
     const objectUrl = URL.createObjectURL(result.blob);
     const frame = document.createElement("iframe");
     frame.title = "PrintChum print document";
-    frame.hidden = true;
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "1px";
+    frame.style.height = "1px";
+    frame.style.border = "0";
+    frame.style.opacity = "0";
+    frame.style.pointerEvents = "none";
     frame.src = objectUrl;
     document.body.append(frame);
     let disposed = false;
@@ -22,19 +30,25 @@ export function printPdfResult(result: PdfExportResult): Promise<PrintSession> {
       URL.revokeObjectURL(objectUrl);
     };
     frame.onload = () => {
-      try {
-        frame.contentWindow?.focus();
-        frame.contentWindow?.print();
-        resolve({ dispose });
-        setTimeout(dispose, 60_000);
-      } catch {
-        dispose();
-        reject(
-          new Error(
-            "The browser could not open the print dialog. Download the PDF and print it manually.",
-          ),
-        );
-      }
+      window.setTimeout(() => {
+        try {
+          const printWindow = frame.contentWindow;
+          if (!printWindow) {
+            throw new Error("The print frame is unavailable.");
+          }
+          printWindow.focus();
+          printWindow.print();
+          resolve({ dispose });
+          window.setTimeout(dispose, 60_000);
+        } catch {
+          dispose();
+          reject(
+            new Error(
+              "The browser could not open the print dialog. Download the PDF and print it manually.",
+            ),
+          );
+        }
+      }, 250);
     };
     frame.onerror = () => {
       dispose();
