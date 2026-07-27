@@ -1,7 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
-	"name": "printchum",
+	"name": "printchum-v1",
 	"compatibility_date": "2026-07-27",
 	"compatibility_flags": [
 		"nodejs_compat",
