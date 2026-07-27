@@ -45,3 +45,27 @@ export function formatPhotoDimensions(
 ): string {
   return `${width} × ${height} ${unit}`;
 }
+
+function normalizeDimensionLabel(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\b(?:in|cm|mm)\b/g, "")
+    .replace(/[×x]/g, "x")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
+export function formatPhotoSizeLabel(
+  name: string,
+  width: number,
+  height: number,
+  unit: MeasurementUnit,
+): string {
+  const dimensions = formatPhotoDimensions(width, height, unit);
+
+  if (normalizeDimensionLabel(name) === normalizeDimensionLabel(dimensions)) {
+    return dimensions;
+  }
+
+  return `${name} · ${dimensions}`;
+}

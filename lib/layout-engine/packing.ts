@@ -153,6 +153,13 @@ export function packItemsOnPages(
       heightInches: candidate.heightInches,
       rotation: candidate.rotation,
     };
+    if (item.nameplatePosition) {
+      placedItem.photoWidthInches = item.photoWidthInches;
+      placedItem.photoHeightInches = item.photoHeightInches;
+      placedItem.nameplateHeightInches =
+        item.nameplateHeightInches;
+      placedItem.nameplatePosition = item.nameplatePosition;
+    }
 
     pages[pageIndex].items.push(placedItem);
     cursorX += candidate.widthInches + area.horizontalSpacingInches;

@@ -20,6 +20,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/editor": "Create Layout",
   "/service-sets": "Service Sets",
+  "/passport-presets": "Passport Presets",
 };
 
 export function AppHeader() {

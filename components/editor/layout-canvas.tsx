@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { drawLayoutPreview } from "@/lib/canvas/draw-layout-preview";
 import type { CropMode, CropState } from "@/features/editor/types";
 import type { LayoutResult } from "@/lib/layout-engine/types";
+import type { NameplateSettings } from "@/lib/nameplates/types";
 
 type LayoutCanvasProps = {
   paperWidthInches: number;
@@ -20,6 +21,7 @@ type LayoutCanvasProps = {
   cuttingGuides: boolean;
   sizeLabels: boolean;
   itemLabels: Readonly<Record<string, string>>;
+  itemNameplates: Readonly<Record<string, NameplateSettings | undefined>>;
 };
 
 type PreviewPanOffset = {
@@ -91,6 +93,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     cuttingGuides,
     sizeLabels,
     itemLabels,
+    itemNameplates,
   } = props;
 
   useEffect(() => {
@@ -186,6 +189,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
         cuttingGuides,
         sizeLabels,
         itemLabels,
+        itemNameplates,
       });
     };
 
@@ -215,6 +219,7 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
     cuttingGuides,
     imageRevision,
     itemLabels,
+    itemNameplates,
     layoutResult,
     marginInches,
     paperHeightInches,
@@ -264,6 +269,11 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
       ref={containerRef}
       className="relative h-[clamp(520px,65vh,760px)] w-full overflow-hidden rounded-xl border border-[var(--gray-200)] bg-[var(--background)]"
       data-preview-surface="plain"
+      data-nameplate-count={
+        Object.values(itemNameplates).filter(
+          (settings) => settings?.enabled,
+        ).length
+      }
     >
       {layoutResult && layoutResult.pages.length > 0 ? (
         <>

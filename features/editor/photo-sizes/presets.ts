@@ -4,6 +4,8 @@ import type {
   PhotoSizePreset,
 } from "@/features/editor/types";
 
+export const PHOTO_SIZE_DEFAULT_QUANTITY = 1;
+
 export const photoSizePresets: readonly PhotoSizePreset[] = [
   {
     id: "1x1",
@@ -13,7 +15,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 1,
     unit: "in",
     category: "id",
-    defaultQuantity: 4,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -24,7 +26,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 1.5,
     unit: "in",
     category: "id",
-    defaultQuantity: 4,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -35,7 +37,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 2,
     unit: "in",
     category: "id",
-    defaultQuantity: 4,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -46,7 +48,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 45,
     unit: "mm",
     category: "passport",
-    defaultQuantity: 4,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -57,7 +59,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 3.5,
     unit: "in",
     category: "wallet",
-    defaultQuantity: 2,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -68,7 +70,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 3.5,
     unit: "in",
     category: "photo-paper",
-    defaultQuantity: 1,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -79,7 +81,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 5,
     unit: "in",
     category: "portrait",
-    defaultQuantity: 1,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
   {
@@ -90,7 +92,7 @@ export const photoSizePresets: readonly PhotoSizePreset[] = [
     height: 2,
     unit: "in",
     category: "custom",
-    defaultQuantity: 1,
+    defaultQuantity: PHOTO_SIZE_DEFAULT_QUANTITY,
     allowRotationByDefault: false,
   },
 ];
@@ -115,6 +117,7 @@ export function createPhotoSizeItemFromPreset(
 ): PhotoSizeItem {
   return {
     id: createSelectedPhotoSizeId(existingIds),
+    source: "standard",
     presetId: preset.id,
     name: preset.name,
     width: preset.width,
@@ -132,6 +135,7 @@ export function createCustomPhotoSizeItem(
 ): PhotoSizeItem {
   return {
     ...item,
+    source: item.source ?? "custom",
     id: createSelectedPhotoSizeId(existingIds),
   };
 }

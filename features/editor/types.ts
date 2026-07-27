@@ -11,6 +11,8 @@ import type {
   ServiceSet,
   ServiceSetModificationState,
 } from "@/lib/service-sets/types";
+import type { NameplateSettings as PhotoNameplateSettings } from "@/lib/nameplates/types";
+import type { PassportPreset } from "@/lib/passport-presets/types";
 
 export type {
   CustomPaperPreset,
@@ -52,7 +54,9 @@ export type PhotoSizePreset = {
 
 export type PhotoSizeItem = {
   id: string;
+  source?: "standard" | "custom" | "passport" | "service-set";
   presetId?: string;
+  passportPresetId?: string;
   name: string;
   width: number;
   height: number;
@@ -60,6 +64,7 @@ export type PhotoSizeItem = {
   quantity: number;
   allowRotation: boolean;
   nameplateEnabled: boolean;
+  nameplate?: PhotoNameplateSettings;
 };
 
 export type NewPhotoSizeItem = Omit<PhotoSizeItem, "id">;
@@ -67,13 +72,6 @@ export type NewPhotoSizeItem = Omit<PhotoSizeItem, "id">;
 export type PhotoSizeItemChanges = Partial<
   Omit<PhotoSizeItem, "id" | "presetId">
 >;
-
-export type NameplateSettings = {
-  enabled: boolean;
-  primaryText: string;
-  secondaryText: string;
-  thirdLine: string;
-};
 
 export type EditorState = {
   sourceFile: File | null;
@@ -90,7 +88,11 @@ export type EditorState = {
   photoSizes: PhotoSizeItem[];
   paper: PaperSettings;
   customPaperPresets: CustomPaperPreset[];
-  nameplate: NameplateSettings;
+  passportPresets: PassportPreset[];
+  favoritePassportPresetIds: string[];
+  recentPassportPresetIds: string[];
+  selectedPassportPresetId: string | null;
+  passportBackgroundRecommendation: string | null;
   layoutMode: "auto" | "grid" | "manual";
   layoutResult: LayoutResult | null;
   layoutError: string | null;

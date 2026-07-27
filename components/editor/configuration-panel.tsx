@@ -3,6 +3,7 @@
 import { ImagePlus } from "lucide-react";
 
 import { PaperSettingsPanel } from "@/components/editor/paper-settings-panel";
+import { PassportPresetSelector } from "@/components/editor/passport-preset-selector";
 import { PhotoCropper } from "@/components/editor/photo-cropper";
 import { PhotoSizesPanel } from "@/components/editor/photo-sizes-panel";
 import { PhotoUpload } from "@/components/editor/photo-upload";
@@ -37,6 +38,8 @@ export function ConfigurationPanel() {
           </div>
         </CardContent>
       </Card>
+
+      <PassportPresetSelector />
 
       <PhotoSizesPanel />
 

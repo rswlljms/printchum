@@ -66,6 +66,27 @@ import type {
   NewCustomPaperPreset,
   PaperSettings,
 } from "@/lib/paper/types";
+import {
+  measureNameplate,
+} from "@/lib/nameplates/measurement";
+import { createNameplateSettings } from "@/lib/nameplates/presets";
+import { nameplateSettingsSchema } from "@/lib/nameplates/schemas";
+import type {
+  NameplatePresetType,
+  NameplateSettings,
+} from "@/lib/nameplates/types";
+import {
+  createCustomPassportPreset as createCustomPassportPresetOperation,
+  duplicatePassportPreset as duplicatePassportPresetOperation,
+  recordRecentPassportPreset as recordRecentPassportPresetOperation,
+  removeCustomPassportPreset as removeCustomPassportPresetOperation,
+  updateCustomPassportPreset as updateCustomPassportPresetOperation,
+} from "@/lib/passport-presets/operations";
+import { builtInPassportPresets } from "@/lib/passport-presets/presets";
+import type {
+  NewPassportPreset,
+  PassportPresetChanges,
+} from "@/lib/passport-presets/types";
 
 type EditorActions = {
   replaceSourcePhoto: (file: File) => void;
@@ -111,6 +132,28 @@ type EditorActions = {
   setPhotoSizeQuantity: (itemId: string, quantity: number) => void;
   setPhotoSizeRotation: (itemId: string, allowRotation: boolean) => void;
   setPhotoSizeNameplate: (itemId: string, enabled: boolean) => void;
+  setPhotoSizeNameplatePreset: (
+    itemId: string,
+    presetType: NameplatePresetType,
+  ) => void;
+  updatePhotoSizeNameplate: (
+    itemId: string,
+    changes: Partial<NameplateSettings>,
+  ) => boolean;
+  resetPhotoSizeNameplate: (itemId: string) => void;
+  applyNameplateToAllPhotoSizes: (sourceItemId: string) => void;
+  applyPassportPreset: (
+    presetId: string,
+    mode?: "add" | "replace",
+  ) => boolean;
+  togglePassportPresetFavorite: (presetId: string) => void;
+  createCustomPassportPreset: (input: NewPassportPreset) => string | null;
+  updateCustomPassportPreset: (
+    presetId: string,
+    changes: PassportPresetChanges,
+  ) => boolean;
+  duplicatePassportPreset: (presetId: string) => string | null;
+  removeCustomPassportPreset: (presetId: string) => boolean;
   clearPhotoSizes: () => void;
   replacePhotoSizes: (photoSizes: PhotoSizeItem[]) => void;
   selectServiceSet: (serviceSetId: string) => void;
@@ -190,12 +233,14 @@ function createInitialState(): EditorState {
     photoSizes: [],
     paper: createPaperSettingsFromPreset(defaultPaperPreset),
     customPaperPresets: [],
-    nameplate: {
-      enabled: false,
-      primaryText: "",
-      secondaryText: "",
-      thirdLine: "",
-    },
+    passportPresets: builtInPassportPresets.map((preset) => ({
+      ...preset,
+      allowedBackgroundColors: [...preset.allowedBackgroundColors],
+    })),
+    favoritePassportPresetIds: [],
+    recentPassportPresetIds: [],
+    selectedPassportPresetId: null,
+    passportBackgroundRecommendation: null,
     layoutMode: "auto",
     layoutResult: null,
     layoutError: null,
@@ -243,6 +288,17 @@ function calculateEditorLayout(state: EditorState): Pick<EditorState, "layoutRes
         quantity: item.quantity,
         allowRotation:
           state.paper.allowPhotoRotation && item.allowRotation,
+        nameplate:
+          item.nameplateEnabled && item.nameplate
+            ? {
+                enabled: true,
+                position: item.nameplate.position,
+                heightInches: measureNameplate({
+                  settings: item.nameplate,
+                  photoWidthInches: toInches(item.width, item.unit),
+                }).totalHeightInches,
+              }
+            : undefined,
       })),
     });
 
@@ -804,7 +860,9 @@ export const useEditorStore = create<EditorStore>()(
       const sourceItem = state.photoSizes[sourceIndex];
       const duplicate = createCustomPhotoSizeItem(
         {
+          source: sourceItem.source,
           presetId: sourceItem.presetId,
+          passportPresetId: sourceItem.passportPresetId,
           name: createDuplicateName(sourceItem.name),
           width: sourceItem.width,
           height: sourceItem.height,
@@ -812,6 +870,9 @@ export const useEditorStore = create<EditorStore>()(
           quantity: sourceItem.quantity,
           allowRotation: sourceItem.allowRotation,
           nameplateEnabled: sourceItem.nameplateEnabled,
+          nameplate: sourceItem.nameplate
+            ? { ...sourceItem.nameplate }
+            : undefined,
         },
         state.photoSizes.map((item) => item.id),
       );
@@ -858,10 +919,277 @@ export const useEditorStore = create<EditorStore>()(
       updatePhotoSizesAndLayout(
         state,
         state.photoSizes.map((item) =>
-          item.id === itemId ? { ...item, nameplateEnabled } : item,
+          item.id === itemId
+            ? {
+                ...item,
+                nameplateEnabled,
+                nameplate: {
+                  ...(item.nameplate ?? createNameplateSettings()),
+                  enabled: nameplateEnabled,
+                },
+              }
+            : item,
         ),
       ),
     );
+  },
+  setPhotoSizeNameplatePreset: (itemId, presetType) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                nameplateEnabled: true,
+                nameplate: createNameplateSettings(presetType),
+              }
+            : item,
+        ),
+      ),
+    );
+  },
+  updatePhotoSizeNameplate: (itemId, changes) => {
+    const source = get().photoSizes.find((item) => item.id === itemId);
+    if (!source) {
+      return false;
+    }
+    const candidate = nameplateSettingsSchema.safeParse({
+      ...(source.nameplate ?? createNameplateSettings()),
+      ...changes,
+    });
+    if (!candidate.success) {
+      return false;
+    }
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                nameplateEnabled: candidate.data.enabled,
+                nameplate: candidate.data,
+              }
+            : item,
+        ),
+      ),
+    );
+    return true;
+  },
+  resetPhotoSizeNameplate: (itemId) => {
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                nameplateEnabled: false,
+                nameplate: {
+                  ...createNameplateSettings(),
+                  enabled: false,
+                },
+              }
+            : item,
+        ),
+      ),
+    );
+  },
+  applyNameplateToAllPhotoSizes: (sourceItemId) => {
+    const source = get().photoSizes.find(
+      (item) => item.id === sourceItemId,
+    );
+    if (!source?.nameplate) {
+      return;
+    }
+    set((state) =>
+      updatePhotoSizesAndLayout(
+        state,
+        state.photoSizes.map((item) => ({
+          ...item,
+          nameplateEnabled: source.nameplateEnabled,
+          nameplate: { ...source.nameplate! },
+        })),
+      ),
+    );
+  },
+  applyPassportPreset: (presetId, mode = "add") => {
+    const state = get();
+    const preset = state.passportPresets.find(
+      (candidate) => candidate.id === presetId,
+    );
+    if (!preset) {
+      return false;
+    }
+    const existingIds = state.photoSizes.map((item) => item.id);
+    const passportItem: PhotoSizeItem = {
+      id: createCustomPhotoSizeItem(
+        {
+          source: "passport",
+          passportPresetId: preset.id,
+          name: preset.name,
+          width: preset.width,
+          height: preset.height,
+          unit: preset.unit,
+          quantity: 1,
+          allowRotation: false,
+          nameplateEnabled: false,
+          nameplate: {
+            ...createNameplateSettings(),
+            enabled: false,
+          },
+        },
+        existingIds,
+      ).id,
+      source: "passport",
+      passportPresetId: preset.id,
+      name: preset.name,
+      width: preset.width,
+      height: preset.height,
+      unit: preset.unit,
+      quantity: 1,
+      allowRotation: false,
+      nameplateEnabled: false,
+      nameplate: {
+        ...createNameplateSettings(),
+        enabled: false,
+      },
+    };
+    const photoSizes =
+      mode === "replace"
+        ? [
+            ...state.photoSizes.filter(
+              (item) => !item.passportPresetId,
+            ),
+            passportItem,
+          ]
+        : [...state.photoSizes, passportItem];
+    const backgroundColor =
+      preset.defaultBackgroundColor ?? state.backgroundColor;
+    const candidateState: EditorState = {
+      ...state,
+      photoSizes,
+      selectedPassportPresetId: preset.id,
+      passportBackgroundRecommendation:
+        preset.defaultBackgroundColor ?? null,
+      recentPassportPresetIds: recordRecentPassportPresetOperation(
+        state.recentPassportPresetIds,
+        preset.id,
+      ),
+      backgroundMode: preset.defaultBackgroundColor
+        ? "solid"
+        : state.backgroundMode,
+      backgroundColor,
+    };
+    set({
+      photoSizes,
+      selectedPassportPresetId: preset.id,
+      passportBackgroundRecommendation:
+        preset.defaultBackgroundColor ?? null,
+      recentPassportPresetIds: candidateState.recentPassportPresetIds,
+      backgroundMode: candidateState.backgroundMode,
+      backgroundColor,
+      ...calculateEditorLayout(candidateState),
+    });
+    return true;
+  },
+  togglePassportPresetFavorite: (presetId) => {
+    set((state) => {
+      if (!state.passportPresets.some((preset) => preset.id === presetId)) {
+        return {};
+      }
+      const isFavorite =
+        state.favoritePassportPresetIds.includes(presetId);
+      const favoritePassportPresetIds = isFavorite
+        ? state.favoritePassportPresetIds.filter((id) => id !== presetId)
+        : [...state.favoritePassportPresetIds, presetId];
+      return {
+        favoritePassportPresetIds,
+        passportPresets: state.passportPresets.map((preset) =>
+          preset.id === presetId
+            ? { ...preset, isFavorite: !isFavorite }
+            : preset,
+        ),
+      };
+    });
+  },
+  createCustomPassportPreset: (input) => {
+    const created = createCustomPassportPresetOperation(
+      get().passportPresets,
+      input,
+    );
+    if (!created) {
+      return null;
+    }
+    set((state) => ({
+      passportPresets: [...state.passportPresets, created],
+      favoritePassportPresetIds: created.isFavorite
+        ? [...state.favoritePassportPresetIds, created.id]
+        : state.favoritePassportPresetIds,
+    }));
+    return created.id;
+  },
+  updateCustomPassportPreset: (presetId, changes) => {
+    const passportPresets = updateCustomPassportPresetOperation(
+      get().passportPresets,
+      presetId,
+      changes,
+    );
+    if (!passportPresets) {
+      return false;
+    }
+    const updatedPreset = passportPresets.find(
+      (preset) => preset.id === presetId,
+    );
+    set((state) => ({
+      passportPresets,
+      favoritePassportPresetIds: updatedPreset?.isFavorite
+        ? [
+            ...state.favoritePassportPresetIds.filter(
+              (id) => id !== presetId,
+            ),
+            presetId,
+          ]
+        : state.favoritePassportPresetIds.filter(
+            (id) => id !== presetId,
+          ),
+    }));
+    return true;
+  },
+  duplicatePassportPreset: (presetId) => {
+    const duplicate = duplicatePassportPresetOperation(
+      get().passportPresets,
+      presetId,
+    );
+    if (!duplicate) {
+      return null;
+    }
+    set((state) => ({
+      passportPresets: [...state.passportPresets, duplicate],
+    }));
+    return duplicate.id;
+  },
+  removeCustomPassportPreset: (presetId) => {
+    const passportPresets = removeCustomPassportPresetOperation(
+      get().passportPresets,
+      presetId,
+    );
+    if (!passportPresets) {
+      return false;
+    }
+    set((state) => ({
+      passportPresets,
+      favoritePassportPresetIds:
+        state.favoritePassportPresetIds.filter((id) => id !== presetId),
+      recentPassportPresetIds:
+        state.recentPassportPresetIds.filter((id) => id !== presetId),
+      selectedPassportPresetId:
+        state.selectedPassportPresetId === presetId
+          ? null
+          : state.selectedPassportPresetId,
+    }));
+    return true;
   },
   clearPhotoSizes: () => {
     set((state) => updatePhotoSizesAndLayout(state, []));
@@ -1055,6 +1383,7 @@ export const useEditorStore = create<EditorStore>()(
       photoItems: state.photoSizes.map((item) => ({
         id: item.id,
         photoSizePresetId: item.presetId,
+        passportPresetId: item.passportPresetId,
         name: item.name,
         width: item.width,
         height: item.height,
@@ -1062,6 +1391,7 @@ export const useEditorStore = create<EditorStore>()(
         quantity: item.quantity,
         allowRotation: item.allowRotation,
         nameplateEnabled: item.nameplateEnabled,
+        nameplate: item.nameplate ? { ...item.nameplate } : undefined,
       })),
       paper,
       background:
@@ -1105,9 +1435,17 @@ export const useEditorStore = create<EditorStore>()(
     const objectUrl = get().sourceObjectUrl;
     const customPaperPresets = get().customPaperPresets;
     const serviceSets = get().serviceSets;
+    const passportPresets = get().passportPresets;
+    const favoritePassportPresetIds =
+      get().favoritePassportPresetIds;
+    const recentPassportPresetIds = get().recentPassportPresetIds;
     const nextState = createInitialState();
     nextState.customPaperPresets = customPaperPresets;
     nextState.serviceSets = serviceSets;
+    nextState.passportPresets = passportPresets;
+    nextState.favoritePassportPresetIds =
+      favoritePassportPresetIds;
+    nextState.recentPassportPresetIds = recentPassportPresetIds;
     set({ ...nextState, ...calculateEditorLayout(nextState) });
     revokeObjectUrl(objectUrl);
   },

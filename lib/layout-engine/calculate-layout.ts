@@ -55,18 +55,44 @@ function validateInput(input: LayoutInput): void {
         item.id,
       );
     }
+    if (
+      item.nameplate &&
+      (!Number.isFinite(item.nameplate.heightInches) ||
+        item.nameplate.heightInches < 0)
+    ) {
+      throw new LayoutCalculationError(
+        "INVALID_INPUT",
+        "Nameplate height must be a finite non-negative number.",
+        item.id,
+      );
+    }
   }
 }
 
 function expandItems(input: LayoutInput): ExpandedLayoutItem[] {
   return input.items.flatMap((item) =>
-    Array.from({ length: item.quantity }, (_, index) => ({
-      instanceId: `${item.id}-${index + 1}`,
-      sourceItemId: item.id,
-      widthInches: item.widthInches,
-      heightInches: item.heightInches,
-      allowRotation: item.allowRotation,
-    })),
+    Array.from({ length: item.quantity }, (_, index) => {
+      const outsideNameplate =
+        item.nameplate?.enabled &&
+        item.nameplate.position.endsWith("-outside")
+          ? item.nameplate.heightInches
+          : 0;
+      const expandedItem: ExpandedLayoutItem = {
+        instanceId: `${item.id}-${index + 1}`,
+        sourceItemId: item.id,
+        widthInches: item.widthInches,
+        heightInches: item.heightInches + outsideNameplate,
+        allowRotation: item.allowRotation,
+      };
+      if (item.nameplate?.enabled) {
+        expandedItem.photoWidthInches = item.widthInches;
+        expandedItem.photoHeightInches = item.heightInches;
+        expandedItem.nameplateHeightInches =
+          item.nameplate.heightInches;
+        expandedItem.nameplatePosition = item.nameplate.position;
+      }
+      return expandedItem;
+    }),
   );
 }
 

@@ -73,6 +73,8 @@ export function createEditorConfigurationFromServiceSet(
     photoSizes.push({
       id: createId(existingIds),
       presetId: item.photoSizePresetId,
+      source: "service-set",
+      passportPresetId: item.passportPresetId,
       name: item.name,
       width: item.width,
       height: item.height,
@@ -80,6 +82,7 @@ export function createEditorConfigurationFromServiceSet(
       quantity: item.quantity,
       allowRotation: item.allowRotation,
       nameplateEnabled: item.nameplateEnabled,
+      nameplate: item.nameplate ? { ...item.nameplate } : undefined,
     });
   }
 

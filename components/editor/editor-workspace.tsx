@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { orientPaper } from "@/lib/layout-engine/paper-sizes";
 import { toInches } from "@/lib/layout-engine/units";
-import { formatPhotoDimensions } from "@/features/editor/photo-sizes/conversions";
+import { formatPhotoSizeLabel } from "@/features/editor/photo-sizes/conversions";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function EditorWorkspace() {
@@ -60,13 +60,26 @@ export function EditorWorkspace() {
     () => Object.fromEntries(
       photoSizes.map((photoSize) => [
         photoSize.id,
-        `${photoSize.name} · ${formatPhotoDimensions(
+        formatPhotoSizeLabel(
+          photoSize.name,
           photoSize.width,
           photoSize.height,
           photoSize.unit,
-        )}`,
+        ),
       ]),
     ),
+    [photoSizes],
+  );
+  const itemNameplates = useMemo(
+    () =>
+      Object.fromEntries(
+        photoSizes.map((photoSize) => [
+          photoSize.id,
+          photoSize.nameplateEnabled
+            ? photoSize.nameplate
+            : undefined,
+        ]),
+      ),
     [photoSizes],
   );
 
@@ -130,6 +143,7 @@ export function EditorWorkspace() {
               cuttingGuides={paper.cuttingGuidesEnabled}
               sizeLabels={paper.sizeLabelsEnabled}
               itemLabels={itemLabels}
+              itemNameplates={itemNameplates}
             />
             <div className="font-technical flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
               <span>Screen preview · physical output is not implemented yet</span>

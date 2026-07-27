@@ -6,6 +6,7 @@ import type {
   PhotoSizeItem,
 } from "@/features/editor/types";
 import { paperSettingsSchema } from "@/lib/paper/schemas";
+import { nameplateSettingsSchema } from "@/lib/nameplates/schemas";
 import type {
   CustomPaperPreset,
   PaperSettings,
@@ -28,7 +29,11 @@ export const EDITOR_WORKSPACE_SESSION_VERSION = 1;
 
 const photoSizeItemSessionSchema = z.object({
   id: z.string().min(1),
+  source: z
+    .enum(["standard", "custom", "passport", "service-set"])
+    .optional(),
   presetId: z.string().min(1).optional(),
+  passportPresetId: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(50),
   width: z.number().finite().positive(),
   height: z.number().finite().positive(),
@@ -36,6 +41,7 @@ const photoSizeItemSessionSchema = z.object({
   quantity: z.number().int().min(1).max(500),
   allowRotation: z.boolean(),
   nameplateEnabled: z.boolean(),
+  nameplate: nameplateSettingsSchema.optional(),
 });
 
 const customPaperMetadataSchema = z.object({

@@ -13,12 +13,14 @@ export function createServiceSetConfigurationFingerprint(
   const photoSizes = configuration.photoSizes.map((item) =>
     [
       item.presetId ?? "",
+      item.passportPresetId ?? "",
       item.name.trim(),
       normalizedNumber(toInches(item.width, item.unit)),
       normalizedNumber(toInches(item.height, item.unit)),
       item.quantity,
       item.allowRotation ? 1 : 0,
       item.nameplateEnabled ? 1 : 0,
+      item.nameplate ? JSON.stringify(item.nameplate) : "",
     ].join("|"),
   );
   const paper = configuration.paper;

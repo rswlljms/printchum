@@ -30,7 +30,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Create Layout", href: "/editor", icon: Sparkles, enabled: true },
   { label: "Projects", href: "/projects", icon: FolderOpen, enabled: false },
   { label: "Service Sets", href: "/service-sets", icon: SlidersHorizontal, enabled: true },
-  { label: "Passport Presets", href: "/passport-presets", icon: FileImage, enabled: false },
+  { label: "Passport Presets", href: "/passport-presets", icon: FileImage, enabled: true },
   { label: "Billing", href: "/billing", icon: CreditCard, enabled: false },
   { label: "Settings", href: "/settings", icon: Settings, enabled: false },
 ];

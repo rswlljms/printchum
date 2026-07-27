@@ -7,6 +7,7 @@ import {
   type Rectangle,
 } from "@/lib/canvas/crop-geometry";
 import type { LayoutItem, LayoutResult } from "@/lib/layout-engine/types";
+import type { NameplateSettings } from "@/lib/nameplates/types";
 
 export type PreviewPhoto = {
   image: CanvasImageSource;
@@ -33,6 +34,7 @@ export type DrawLayoutPreviewInput = {
   cuttingGuides: boolean;
   sizeLabels: boolean;
   itemLabels: Readonly<Record<string, string>>;
+  itemNameplates?: Readonly<Record<string, NameplateSettings | undefined>>;
 };
 
 type PreparedPhoto = {
@@ -255,6 +257,95 @@ function drawSizeLabel(
   );
 }
 
+function fitCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maximumWidth: number,
+): string {
+  if (context.measureText(text).width <= maximumWidth) {
+    return text;
+  }
+  const ellipsis = "…";
+  let visible = text;
+  while (
+    visible.length > 0 &&
+    context.measureText(`${visible}${ellipsis}`).width > maximumWidth
+  ) {
+    visible = visible.slice(0, -1);
+  }
+  return `${visible}${ellipsis}`;
+}
+
+function drawNameplate(
+  context: CanvasRenderingContext2D,
+  destination: Rectangle,
+  settings: NameplateSettings,
+  pixelsPerInch: number,
+): void {
+  context.save();
+  context.beginPath();
+  context.rect(
+    destination.x,
+    destination.y,
+    destination.width,
+    destination.height,
+  );
+  context.clip();
+  context.fillStyle = settings.backgroundColor;
+  context.fillRect(
+    destination.x,
+    destination.y,
+    destination.width,
+    destination.height,
+  );
+
+  if (settings.borderEnabled && settings.borderWidthPoints > 0) {
+    const borderWidth =
+      settings.borderWidthPoints / 72 * pixelsPerInch;
+    context.strokeStyle = settings.borderColor;
+    context.lineWidth = borderWidth;
+    context.strokeRect(
+      destination.x + borderWidth / 2,
+      destination.y + borderWidth / 2,
+      Math.max(destination.width - borderWidth, 0),
+      Math.max(destination.height - borderWidth, 0),
+    );
+  }
+
+  const lines = [
+    settings.primaryText,
+    settings.secondaryText,
+    settings.thirdLineText,
+  ].filter((line): line is string => Boolean(line?.trim()));
+  const fontSize = settings.fontSizePoints / 72 * pixelsPerInch;
+  const lineHeight = fontSize * settings.lineSpacing;
+  const contentHeight = lines.length * lineHeight;
+  const padding = settings.paddingPoints / 72 * pixelsPerInch;
+  const maximumWidth = Math.max(destination.width - padding * 2, 0);
+  const startY =
+    destination.y + (destination.height - contentHeight) / 2 + lineHeight / 2;
+  context.fillStyle = settings.textColor;
+  context.font = `${settings.fontWeight} ${fontSize}px Geist, system-ui, sans-serif`;
+  context.textAlign = settings.textAlign;
+  context.textBaseline = "middle";
+  const textX =
+    settings.textAlign === "left"
+      ? destination.x + padding
+      : settings.textAlign === "right"
+        ? destination.x + destination.width - padding
+        : destination.x + destination.width / 2;
+
+  lines.forEach((line, index) => {
+    context.fillText(
+      fitCanvasText(context, line, maximumWidth),
+      textX,
+      startY + index * lineHeight,
+      maximumWidth,
+    );
+  });
+  context.restore();
+}
+
 function drawPlacedItem(
   context: CanvasRenderingContext2D,
   item: LayoutItem,
@@ -264,6 +355,7 @@ function drawPlacedItem(
   photo: PreparedPhoto | null,
   sizeLabel: string,
   showSizeLabel: boolean,
+  nameplate: NameplateSettings | undefined,
 ): Rectangle {
   const placedRectangle = {
     x: paperX + item.xInches * pixelsPerInch,
@@ -293,15 +385,66 @@ function drawPlacedItem(
       ? placedRectangle.width
       : placedRectangle.height,
   };
+  const photoWidth =
+    (item.photoWidthInches ?? (
+      item.rotation === 90 ? item.heightInches : item.widthInches
+    )) * pixelsPerInch;
+  const photoHeight =
+    (item.photoHeightInches ?? (
+      item.rotation === 90 ? item.widthInches : item.heightInches
+    )) * pixelsPerInch;
+  const nameplateHeight =
+    (item.nameplateHeightInches ?? 0) * pixelsPerInch;
+  const position = item.nameplatePosition;
+  const isOutside = position?.endsWith("-outside") ?? false;
+  const isTop = position?.startsWith("top-") ?? false;
+  const photoRectangle: Rectangle = {
+    x: 0,
+    y: isOutside && isTop ? nameplateHeight : 0,
+    width: Math.min(photoWidth, localRectangle.width),
+    height: Math.min(photoHeight, localRectangle.height),
+  };
+  const nameplateRectangle: Rectangle | null =
+    nameplate?.enabled && position && nameplateHeight > 0
+      ? {
+          x: 0,
+          y: isOutside
+            ? isTop
+              ? 0
+              : photoRectangle.y + photoRectangle.height
+            : isTop
+              ? photoRectangle.y
+              : photoRectangle.y +
+                Math.max(photoRectangle.height - nameplateHeight, 0),
+          width: photoRectangle.width,
+          height: Math.min(
+            nameplateHeight,
+            isOutside
+              ? Math.max(localRectangle.height - (
+                  isTop ? 0 : photoRectangle.y + photoRectangle.height
+                ), 0)
+              : photoRectangle.height,
+          ),
+        }
+      : null;
 
   if (photo) {
-    drawPhoto(context, photo, localRectangle, pixelsPerInch);
+    drawPhoto(context, photo, photoRectangle, pixelsPerInch);
   } else {
-    drawPhotoPlaceholder(context, localRectangle);
+    drawPhotoPlaceholder(context, photoRectangle);
+  }
+
+  if (nameplateRectangle && nameplate) {
+    drawNameplate(
+      context,
+      nameplateRectangle,
+      nameplate,
+      pixelsPerInch,
+    );
   }
 
   if (showSizeLabel) {
-    drawSizeLabel(context, localRectangle, sizeLabel);
+    drawSizeLabel(context, photoRectangle, sizeLabel);
   }
   context.restore();
 
@@ -361,6 +504,7 @@ export function drawLayoutPreview({
   cuttingGuides,
   sizeLabels,
   itemLabels,
+  itemNameplates = {},
 }: DrawLayoutPreviewInput): void {
   context.clearRect(0, 0, viewportWidth, viewportHeight);
 
@@ -410,6 +554,7 @@ export function drawLayoutPreview({
       preparedPhoto,
       itemLabels[item.sourceItemId] ?? item.sourceItemId,
       sizeLabels,
+      itemNameplates[item.sourceItemId],
     );
     if (cuttingGuides) {
       drawCuttingGuides(context, rectangle);

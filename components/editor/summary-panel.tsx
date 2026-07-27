@@ -19,6 +19,10 @@ export function SummaryPanel() {
     (state) => state.serviceSetModificationState,
   );
   const selectedSizeCount = useEditorStore((state) => state.photoSizes.length);
+  const photoSizes = useEditorStore((state) => state.photoSizes);
+  const passportBackgroundRecommendation = useEditorStore(
+    (state) => state.passportBackgroundRecommendation,
+  );
   const selectedServiceSet = serviceSets.find((set) => set.id === selectedServiceSetId);
   const printableArea = calculatePrintableArea(paper);
   const paperWidth = roundMeasurementForDisplay(paper.width, paper.unit);
@@ -31,33 +35,62 @@ export function SummaryPanel() {
     fromInches(printableArea.printableHeightInches, paper.unit),
     paper.unit,
   );
+  const passportItems = photoSizes.filter(
+    (item) => Boolean(item.passportPresetId),
+  );
+  const passportNames = [
+    ...new Set(passportItems.map((item) => item.name)),
+  ];
+  const nameplateItems = photoSizes.filter(
+    (item) => item.nameplateEnabled && item.nameplate?.enabled,
+  );
+  const outsideNameplateCount = nameplateItems.filter((item) =>
+    item.nameplate?.position.endsWith("-outside"),
+  ).length;
+  const insideNameplateCount =
+    nameplateItems.length - outsideNameplateCount;
 
   const summaryRows = [
     ["Paper", paper.name],
     ["Size", `${paperWidth} × ${paperHeight} ${paper.unit}`],
-    ["Unit", paper.unit],
     ["Orientation", paper.orientation],
-    ["Margin", `${roundMeasurementForDisplay(paper.margin, paper.unit)} ${paper.unit}`],
-    [
-      "Spacing",
-      `${roundMeasurementForDisplay(paper.horizontalSpacing, paper.unit)} × ${roundMeasurementForDisplay(paper.verticalSpacing, paper.unit)} ${paper.unit}`,
-    ],
     ["Printable area", `${printableWidth} × ${printableHeight} ${paper.unit}`],
     ["Selected sizes", String(selectedSizeCount)],
+    [
+      "Passport presets",
+      passportNames.length > 0 ? passportNames.join(", ") : "None",
+    ],
+    [
+      "Background",
+      passportBackgroundRecommendation
+        ? `${passportBackgroundRecommendation} recommended`
+        : "No passport recommendation",
+    ],
+    [
+      "Nameplates",
+      `${nameplateItems.length} ${
+        nameplateItems.length === 1 ? "size" : "sizes"
+      } enabled`,
+    ],
+    ["Inside nameplates", String(insideNameplateCount)],
+    ["Outside nameplates", String(outsideNameplateCount)],
     ["Total photos", String(layoutResult?.totalItems ?? 0)],
     ["Pages", String(layoutResult?.pages.length ?? 0)],
-    ["Arrange mode", paper.autoArrangeMode],
-    ["Service set", selectedServiceSet?.name ?? "Custom"],
     [
-      "Set status",
-      selectedServiceSet
-        ? serviceSetModificationState === "modified"
-          ? "Modified"
-          : "Applied"
-        : "Unselected",
+      "Utilization",
+      `${(layoutResult?.utilizationPercent ?? 0).toFixed(1)}%`,
     ],
-    ["Estimated price", selectedServiceSet ? formatServiceSetPrice(selectedServiceSet) : "—"],
-    ["AI credit impact", "0 credits"],
+    ["Unplaced", String(layoutResult?.unplacedItems.length ?? 0)],
+    [
+      "Service set",
+      selectedServiceSet
+        ? `${selectedServiceSet.name} · ${
+            serviceSetModificationState === "modified"
+              ? "Modified"
+              : "Applied"
+          } · ${formatServiceSetPrice(selectedServiceSet)}`
+        : "Custom",
+    ],
   ] as const;
 
   return (

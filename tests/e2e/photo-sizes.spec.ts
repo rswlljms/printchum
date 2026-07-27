@@ -1,5 +1,26 @@
 import { expect, test } from "@playwright/test";
 
+test("starts every selected standard photo size at quantity one", async ({
+  page,
+}) => {
+  await page.goto("/editor");
+
+  for (const sizeName of ["1 × 1", "Wallet", "Half Body"]) {
+    await page
+      .getByRole("button", { name: `Add ${sizeName} photo size` })
+      .click();
+  }
+
+  const selectedSizes = page.locator("[data-photo-size-id]");
+  await expect(selectedSizes).toHaveCount(3);
+
+  for (const selectedSize of await selectedSizes.all()) {
+    await expect(
+      selectedSize.getByRole("spinbutton", { name: /quantity/i }),
+    ).toHaveValue("1");
+  }
+});
+
 test("adds, edits, duplicates, and removes a custom photo size", async ({
   page,
 }) => {

@@ -15,7 +15,8 @@ describe("editor photo-size actions", () => {
     const state = useEditorStore.getState();
     expect(state.photoSizes).toHaveLength(2);
     expect(state.photoSizes[0].id).not.toBe(state.photoSizes[1].id);
-    expect(state.layoutResult?.totalItems).toBe(8);
+    expect(state.photoSizes.map((item) => item.quantity)).toEqual([1, 1]);
+    expect(state.layoutResult?.totalItems).toBe(2);
   });
 
   it("adds and edits a custom size in centimeters", () => {
@@ -136,7 +137,7 @@ describe("editor photo-size actions", () => {
     const secondResult = useEditorStore.getState().layoutResult;
 
     expect(firstResult).toEqual(secondResult);
-    expect(firstResult?.totalItems).toBe(6);
+    expect(firstResult?.totalItems).toBe(3);
   });
 
   it("returns an empty layout after removing the final size", () => {

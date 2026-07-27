@@ -3,6 +3,7 @@ import { z } from "zod";
 import { findPaperPreset } from "@/lib/paper/presets";
 import { calculatePrintableArea } from "@/lib/paper/printable-area";
 import { serviceSetPaperToSettings } from "@/lib/service-sets/apply-service-set";
+import { nameplateSettingsSchema } from "@/lib/nameplates/schemas";
 
 const finiteDimension = z.coerce.number<number>().finite().positive();
 const hexColor = /^#[0-9a-fA-F]{6}$/;
@@ -10,6 +11,7 @@ const hexColor = /^#[0-9a-fA-F]{6}$/;
 export const serviceSetPhotoItemSchema = z.object({
   id: z.string().trim().min(1),
   photoSizePresetId: z.string().trim().min(1).optional(),
+  passportPresetId: z.string().trim().min(1).optional(),
   name: z.string().trim().min(1).max(50),
   width: finiteDimension.max(100),
   height: finiteDimension.max(100),
@@ -17,6 +19,7 @@ export const serviceSetPhotoItemSchema = z.object({
   quantity: z.coerce.number<number>().int().min(1).max(500),
   allowRotation: z.boolean(),
   nameplateEnabled: z.boolean(),
+  nameplate: nameplateSettingsSchema.optional(),
 });
 
 export const serviceSetPaperSchema = z.discriminatedUnion("source", [

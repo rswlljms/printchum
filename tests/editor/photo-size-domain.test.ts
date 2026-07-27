@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   convertDisplayedMeasurement,
   exceedsMaximumPhysicalDimension,
+  formatPhotoSizeLabel,
 } from "@/features/editor/photo-sizes/conversions";
 import {
+  PHOTO_SIZE_DEFAULT_QUANTITY,
   createPhotoSizeItemFromPreset,
   createSelectedPhotoSizeId,
   findPhotoSizePreset,
@@ -25,7 +27,12 @@ describe("photo-size preset catalog", () => {
       "half-body",
       "custom",
     ]);
-    expect(findPhotoSizePreset("wallet")?.defaultQuantity).toBe(2);
+    expect(
+      photoSizePresets.every(
+        (preset) => preset.defaultQuantity === PHOTO_SIZE_DEFAULT_QUANTITY,
+      ),
+    ).toBe(true);
+    expect(PHOTO_SIZE_DEFAULT_QUANTITY).toBe(1);
     expect(findPhotoSizePreset("passport")?.description).not.toContain(
       "Generic",
     );
@@ -42,7 +49,7 @@ describe("photo-size preset catalog", () => {
     const second = createPhotoSizeItemFromPreset(preset);
 
     expect(first.id).not.toBe(second.id);
-    expect(first.quantity).toBe(4);
+    expect(first.quantity).toBe(1);
     expect(first.presetId).toBe("2x2");
   });
 
@@ -110,5 +117,13 @@ describe("photo-size validation and conversion", () => {
     expect(centimeters).toBe(5.08);
     expect(inches).toBe(2);
     expect(toInches(centimeters, "cm")).toBeCloseTo(2, 10);
+  });
+
+  it("does not repeat a dimension-based name in the canvas label", () => {
+    expect(formatPhotoSizeLabel("2 × 2", 2, 2, "in")).toBe("2 × 2 in");
+    expect(formatPhotoSizeLabel("2x2", 2, 2, "in")).toBe("2 × 2 in");
+    expect(formatPhotoSizeLabel("Passport", 35, 45, "mm")).toBe(
+      "Passport · 35 × 45 mm",
+    );
   });
 });

@@ -4,6 +4,7 @@ import type {
   PaperOrientation,
 } from "@/lib/layout-engine/types";
 import type { PaperSettings } from "@/lib/paper/types";
+import type { NameplateSettings } from "@/lib/nameplates/types";
 
 export type ServiceSetStatus = "enabled" | "disabled";
 
@@ -15,6 +16,7 @@ export type BackgroundPreference =
 export type ServiceSetPhotoItem = {
   id: string;
   photoSizePresetId?: string;
+  passportPresetId?: string;
   name: string;
   width: number;
   height: number;
@@ -22,6 +24,7 @@ export type ServiceSetPhotoItem = {
   quantity: number;
   allowRotation: boolean;
   nameplateEnabled: boolean;
+  nameplate?: NameplateSettings;
 };
 
 export type ServiceSetPaperConfig =

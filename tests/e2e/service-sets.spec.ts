@@ -48,7 +48,7 @@ test("confirms replacement, tracks modification, and reapplies the set", async (
   await confirmation.getByRole("button", { name: "Cancel" }).click();
   await expect(
     page.getByRole("spinbutton", { name: "Quantity for 2 × 2" }),
-  ).toHaveValue("4");
+  ).toHaveValue("1");
 
   await page.getByRole("button", { name: "Review Set B" }).click();
   await page
@@ -66,7 +66,9 @@ test("confirms replacement, tracks modification, and reapplies the set", async (
   await page
     .getByRole("button", { name: "Increase quantity for 1.5 × 1.5" })
     .click();
-  await expect(page.getByText("Set B · Modified")).toBeVisible();
+  await expect(
+    page.getByText("Set B · Modified", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Reapply" }).click();
   await expect(page.getByText("Set B applied")).toBeVisible();
   await expect(

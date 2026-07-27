@@ -6,9 +6,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PhotoSizeDialog } from "@/components/editor/photo-size-dialog";
 import { PhotoSizeItem } from "@/components/editor/photo-size-item";
 import { PhotoSizeSelector } from "@/components/editor/photo-size-selector";
+import { NameplateEditor } from "@/components/editor/nameplate-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { findPhotoSizePreset } from "@/features/editor/photo-sizes/presets";
+import {
+  PHOTO_SIZE_DEFAULT_QUANTITY,
+  findPhotoSizePreset,
+} from "@/features/editor/photo-sizes/presets";
 import type { PhotoSizeFormInput, PhotoSizeFormValues } from "@/features/editor/photo-sizes/schemas";
 import type { NewPhotoSizeItem } from "@/features/editor/types";
 import { useEditorStore } from "@/stores/editor-store";
@@ -18,7 +22,7 @@ const customSizeDefaults: PhotoSizeFormInput = {
   width: 2,
   height: 2,
   unit: "in",
-  quantity: 1,
+  quantity: PHOTO_SIZE_DEFAULT_QUANTITY,
   allowRotation: false,
   nameplateEnabled: false,
 };
@@ -55,12 +59,12 @@ export function PhotoSizesPanel() {
   const setPhotoSizeQuantity = useEditorStore(
     (state) => state.setPhotoSizeQuantity,
   );
-  const setPhotoSizeNameplate = useEditorStore(
-    (state) => state.setPhotoSizeNameplate,
-  );
   const clearPhotoSizes = useEditorStore((state) => state.clearPhotoSizes);
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [nameplateItemId, setNameplateItemId] = useState<string | null>(
+    null,
+  );
   const [feedback, setFeedback] = useState<string | null>(null);
   const returnFocusElement = useRef<HTMLElement | null>(null);
   const editingItem = photoSizes.find((item) => item.id === editingItemId);
@@ -216,12 +220,9 @@ export function PhotoSizesPanel() {
                     onDuplicate={duplicateItem}
                     onRemove={removeItem}
                     onQuantityChange={setPhotoSizeQuantity}
-                    onNameplateChange={setPhotoSizeNameplate}
+                    onConfigureNameplate={setNameplateItemId}
                   />
                 ))}
-                <p className="text-[11px] leading-5 text-[var(--gray-500)]">
-                  Nameplate settings will be configured in a later phase.
-                </p>
               </div>
             )}
           </div>
@@ -266,6 +267,17 @@ export function PhotoSizesPanel() {
           }}
         />
       ) : null}
+
+      <NameplateEditor
+        item={
+          photoSizes.find((item) => item.id === nameplateItemId) ?? null
+        }
+        onOpenChange={(open) => {
+          if (!open) {
+            setNameplateItemId(null);
+          }
+        }}
+      />
     </>
   );
 }

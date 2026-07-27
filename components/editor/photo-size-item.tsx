@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Pencil, Trash2 } from "lucide-react";
+import { Copy, Pencil, Tag, Trash2 } from "lucide-react";
 
 import { QuantityControl } from "@/components/editor/quantity-control";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ type PhotoSizeItemProps = {
   onEdit: (itemId: string) => void;
   onQuantityChange: (itemId: string, quantity: number) => void;
   onRemove: (itemId: string) => void;
-  onNameplateChange: (itemId: string, enabled: boolean) => void;
+  onConfigureNameplate: (itemId: string) => void;
 };
 
 export function PhotoSizeItem({
@@ -22,7 +22,7 @@ export function PhotoSizeItem({
   onEdit,
   onQuantityChange,
   onRemove,
-  onNameplateChange,
+  onConfigureNameplate,
 }: PhotoSizeItemProps) {
   return (
     <article
@@ -52,14 +52,19 @@ export function PhotoSizeItem({
           variant={item.nameplateEnabled ? "default" : "outline"}
           size="sm"
           className="w-full"
-          onClick={() => onNameplateChange(item.id, !item.nameplateEnabled)}
-          role="switch"
-          aria-checked={item.nameplateEnabled}
-          aria-label={`Enable nameplate for ${item.name}`}
+          onClick={() => onConfigureNameplate(item.id)}
+          aria-label={`Configure nameplate for ${item.name}`}
         >
+          <Tag className="size-3.5" />
           Nameplate {item.nameplateEnabled ? "on" : "off"}
         </Button>
       </div>
+
+      {item.passportPresetId ? (
+        <p className="font-technical mt-2 text-[9px] uppercase tracking-wide text-[var(--gray-500)]">
+          Passport preset
+        </p>
+      ) : null}
 
       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-[var(--gray-200)] pt-2">
         <Button

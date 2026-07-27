@@ -19,6 +19,7 @@ import {
   type PhotoSizeFormInput,
   type PhotoSizeFormValues,
 } from "@/features/editor/photo-sizes/schemas";
+import { PHOTO_SIZE_DEFAULT_QUANTITY } from "@/features/editor/photo-sizes/presets";
 import type { MeasurementUnit } from "@/lib/layout-engine/types";
 
 type PhotoSizeDialogProps = {
@@ -56,7 +57,10 @@ export function PhotoSizeDialog({
     if (open) {
       reset({
         ...defaultValues,
-        quantity: mode === "add" ? 1 : defaultValues.quantity,
+        quantity:
+          mode === "add"
+            ? PHOTO_SIZE_DEFAULT_QUANTITY
+            : defaultValues.quantity,
         allowRotation: false,
       });
       previousUnit.current = defaultValues.unit;
@@ -67,7 +71,10 @@ export function PhotoSizeDialog({
     if (nextOpen) {
       reset({
         ...defaultValues,
-        quantity: mode === "add" ? 1 : defaultValues.quantity,
+        quantity:
+          mode === "add"
+            ? PHOTO_SIZE_DEFAULT_QUANTITY
+            : defaultValues.quantity,
         allowRotation: false,
       });
       previousUnit.current = defaultValues.unit;
@@ -227,21 +234,7 @@ export function PhotoSizeDialog({
               </p>
             ) : null}
 
-            <label className="flex items-start gap-3 rounded-lg border border-[var(--gray-200)] bg-[var(--gray-50)] p-3">
-              <input
-                type="checkbox"
-                {...register("nameplateEnabled")}
-                className="mt-0.5 size-4 accent-[var(--ink)]"
-              />
-              <span>
-                <span className="block text-xs font-medium text-[var(--gray-700)]">
-                  Enable nameplate
-                </span>
-                <span className="mt-1 block text-[11px] leading-4 text-[var(--gray-500)]">
-                  Nameplate settings will be configured in a later phase.
-                </span>
-              </span>
-            </label>
+            <input type="hidden" {...register("nameplateEnabled")} />
           </div>
 
           <DialogFooter>

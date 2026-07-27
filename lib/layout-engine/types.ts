@@ -2,8 +2,13 @@ export type MeasurementUnit = "in" | "cm" | "mm";
 export type PaperOrientation = "portrait" | "landscape";
 
 export type NameplateLayoutConfig = {
+  enabled: boolean;
   heightInches: number;
-  placement: "inside" | "outside";
+  position:
+    | "bottom-inside"
+    | "bottom-outside"
+    | "top-inside"
+    | "top-outside";
 };
 
 export type LayoutInput = {
@@ -34,6 +39,10 @@ export type LayoutItem = {
   widthInches: number;
   heightInches: number;
   rotation: 0 | 90;
+  photoWidthInches?: number;
+  photoHeightInches?: number;
+  nameplateHeightInches?: number;
+  nameplatePosition?: NameplateLayoutConfig["position"];
 };
 
 export type LayoutPage = {
@@ -70,6 +79,10 @@ export type ExpandedLayoutItem = {
   widthInches: number;
   heightInches: number;
   allowRotation: boolean;
+  photoWidthInches?: number;
+  photoHeightInches?: number;
+  nameplateHeightInches?: number;
+  nameplatePosition?: NameplateLayoutConfig["position"];
 };
 
 export type UnplacedLayoutItem = {
