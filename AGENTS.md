@@ -176,8 +176,30 @@ Use the following stack unless an approved architectural decision replaces a spe
 
 - PhotoRoom Remove Background API
 - Stripe Billing
-- Vercel
+- Cloudflare Workers
 - Sentry when production monitoring is added
+
+## Deployment
+
+- Deploy the Next.js application to **Cloudflare Workers**, not Cloudflare Pages.
+- Use the `@opennextjs/cloudflare` adapter and Wrangler.
+- Keep `nodejs_compat` enabled and use a current compatibility date.
+- Use the Next.js Node.js runtime through OpenNext. Do not add
+  `export const runtime = "edge"` to application routes.
+- Use `npm run dev` for normal local development and the generated
+  `npm run preview` command to verify the application in the Workers
+  `workerd` runtime before deployment.
+- Use Cloudflare Workers Builds for Git-based production and preview
+  deployments when continuous deployment is enabled.
+- Store runtime credentials using Cloudflare Worker secrets. Never commit
+  secrets or place them in `wrangler.jsonc`.
+- Configure `NEXT_PUBLIC_` values required during static generation as
+  build-time variables in Workers Builds.
+- Deploy to a `workers.dev` address during setup and attach the production
+  custom domain through Cloudflare Workers when ready.
+- Do not configure `output: "export"` for the production application. The
+  application must remain full-stack so route handlers, authentication,
+  Stripe webhooks, and background-removal requests continue to work.
 
 ## Testing
 
