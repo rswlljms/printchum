@@ -10,10 +10,3 @@ test-results/
 !.env.example
 npm-debug.log*
 debug.log
-# OpenNext
-.open-next
-
-# wrangler files
-.wrangler
-.dev.vars*
-!.dev.vars.example

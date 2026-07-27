@@ -176,30 +176,32 @@ Use the following stack unless an approved architectural decision replaces a spe
 
 - PhotoRoom Remove Background API
 - Stripe Billing
-- Cloudflare Workers
+- Vercel
 - Sentry when production monitoring is added
 
 ## Deployment
 
-- Deploy the Next.js application to **Cloudflare Workers**, not Cloudflare Pages.
-- Use the `@opennextjs/cloudflare` adapter and Wrangler.
-- Keep `nodejs_compat` enabled and use a current compatibility date.
-- Use the Next.js Node.js runtime through OpenNext. Do not add
-  `export const runtime = "edge"` to application routes.
-- Use `npm run dev` for normal local development and the generated
-  `npm run preview` command to verify the application in the Workers
-  `workerd` runtime before deployment.
-- Use Cloudflare Workers Builds for Git-based production and preview
-  deployments when continuous deployment is enabled.
-- Store runtime credentials using Cloudflare Worker secrets. Never commit
-  secrets or place them in `wrangler.jsonc`.
-- Configure `NEXT_PUBLIC_` values required during static generation as
-  build-time variables in Workers Builds.
-- Deploy to a `workers.dev` address during setup and attach the production
-  custom domain through Cloudflare Workers when ready.
-- Do not configure `output: "export"` for the production application. The
-  application must remain full-stack so route handlers, authentication,
-  Stripe webhooks, and background-removal requests continue to work.
+- Deploy the Next.js application to **Vercel** using its native Next.js
+  integration.
+- Do not add platform adapters or deployment runtimes unless a verified
+  application requirement cannot be met by Vercel.
+- Use Vercel Git integration for production and preview deployments.
+- Treat the production branch as the authoritative production deployment;
+  other branches and pull requests should use preview deployments.
+- Store server credentials in Vercel encrypted environment variables. Never
+  commit secrets or expose them with the `NEXT_PUBLIC_` prefix.
+- Configure public `NEXT_PUBLIC_` values separately for development, preview,
+  and production environments where their values differ.
+- Use the Node.js runtime for server routes that require full Node.js APIs,
+  Stripe SDK support, or external provider integrations.
+- Keep the application full-stack. Do not configure `output: "export"` when
+  authentication, webhooks, or background-removal routes are present.
+- Vercel Functions have a limited request and response payload size. Before
+  background removal is released, ensure the browser creates a bounded
+  in-memory derivative that fits the current platform limit, validate that
+  limit again on the server, and keep the original customer image local.
+- Preview and production deployments must preserve the privacy rule that
+  customer photos are never persisted by default.
 
 ## Testing
 
