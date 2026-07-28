@@ -4,7 +4,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "letter",
     name: "Letter / Short Bond",
-    description: "8.5 × 11 in · office",
+    description: "8.5 × 11 inches",
     width: 8.5,
     height: 11,
     unit: "in",
@@ -17,7 +17,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "legal",
     name: "Legal",
-    description: "8 × 13 in · Philippines",
+    description: "8 × 13 inches",
     width: 8,
     height: 13,
     unit: "in",
@@ -30,7 +30,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "a4",
     name: "A4",
-    description: "210 × 297 mm · office",
+    description: "210 × 297 millimeters",
     width: 210,
     height: 297,
     unit: "mm",
@@ -43,7 +43,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "a3",
     name: "A3",
-    description: "297 × 420 mm · office",
+    description: "297 × 420 millimeters",
     width: 297,
     height: 420,
     unit: "mm",
@@ -56,7 +56,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "4r",
     name: "4R",
-    description: "4 × 6 in · photo",
+    description: "4 × 6 inches",
     width: 4,
     height: 6,
     unit: "in",
@@ -69,7 +69,7 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "5r",
     name: "5R",
-    description: "5 × 7 in · photo",
+    description: "5 × 7 inches",
     width: 5,
     height: 7,
     unit: "in",

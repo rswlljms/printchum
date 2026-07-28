@@ -54,6 +54,18 @@ describe("paper domain", () => {
       height: 7,
       unit: "in",
     });
+    expect(
+      paperPresets
+        .filter((preset) => preset.id !== "custom")
+        .map((preset) => preset.description),
+    ).toEqual([
+      "8.5 × 11 inches",
+      "8 × 13 inches",
+      "210 × 297 millimeters",
+      "297 × 420 millimeters",
+      "4 × 6 inches",
+      "5 × 7 inches",
+    ]);
   });
 
   it("centralizes physically equivalent unit conversion", () => {
