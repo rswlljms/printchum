@@ -58,11 +58,11 @@ describe("editor paper settings", () => {
     expect(legalState.paper).toMatchObject({
       presetId: "legal",
       name: "Legal",
-      width: 8.5,
-      height: 14,
+      width: 8,
+      height: 13,
       unit: "in",
     });
-    expect(legalState.layoutResult?.pages).toHaveLength(1);
+    expect(legalState.layoutResult?.pages).toHaveLength(2);
   });
 
   it("preserves physical dimensions and spacing through unit changes", () => {

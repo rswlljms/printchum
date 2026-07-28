@@ -63,10 +63,10 @@ describe("standard paper formats", () => {
     expect(result.unplacedItems).toEqual([]);
   });
 
-  it("uses the additional height available on Legal paper", () => {
-    const result = calculateLayout(createTwoByTwoInput(8.5, 14, 19));
+  it("uses Philippine Legal paper dimensions", () => {
+    const result = calculateLayout(createTwoByTwoInput(8, 13, 16));
 
-    expect(result.pages.map((page) => page.items.length)).toEqual([18, 1]);
+    expect(result.pages.map((page) => page.items.length)).toEqual([15, 1]);
   });
 
   it("normalizes and lays out portrait A4 paper in millimeters", () => {

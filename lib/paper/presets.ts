@@ -17,9 +17,9 @@ export const paperPresets: readonly PaperPreset[] = [
   {
     id: "legal",
     name: "Legal",
-    description: "8.5 × 14 in · office",
-    width: 8.5,
-    height: 14,
+    description: "8 × 13 in · Philippines",
+    width: 8,
+    height: 13,
     unit: "in",
     category: "office",
     defaultOrientation: "portrait",

@@ -30,8 +30,8 @@ describe("paper domain", () => {
       unit: "in",
     });
     expect(findPaperPreset("legal")).toMatchObject({
-      width: 8.5,
-      height: 14,
+      width: 8,
+      height: 13,
       unit: "in",
     });
     expect(findPaperPreset("a4")).toMatchObject({
@@ -110,4 +110,3 @@ describe("paper domain", () => {
     ).toBe(false);
   });
 });
-

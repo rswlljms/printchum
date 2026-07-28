@@ -15,7 +15,7 @@ describe("PDF units and geometry", () => {
 
   it.each([
     ["Letter", 8.5, 11, 612, 792],
-    ["Legal", 8.5, 14, 612, 1008],
+    ["Legal", 8, 13, 576, 936],
     ["4R", 4, 6, 288, 432],
   ])(
     "creates exact %s page dimensions",

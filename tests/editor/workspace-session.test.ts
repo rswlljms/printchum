@@ -4,6 +4,7 @@ import {
   EDITOR_WORKSPACE_SESSION_VERSION,
   createPersistedEditorWorkspace,
   migrateLegacyGuideSpacing,
+  migratePhilippineLegalPaper,
   parseEditorWorkspaceSessionStorage,
   parsePersistedEditorWorkspace,
 } from "@/features/editor/workspace-session";
@@ -76,6 +77,46 @@ describe("editor workspace session persistence", () => {
 
     expect(migrated.paper.horizontalSpacing).toBe(0.125);
     expect(migrated.paper.verticalSpacing).toBe(0.125);
+  });
+
+  it("updates restored Legal presets to Philippine dimensions", () => {
+    useEditorStore.getState().resetEditor();
+    const persisted = createPersistedEditorWorkspace(
+      useEditorStore.getState(),
+    );
+    const migrated = migratePhilippineLegalPaper({
+      ...persisted,
+      paper: {
+        ...persisted.paper,
+        presetId: "legal",
+        name: "Legal",
+        width: 8.5,
+        height: 14,
+      },
+    });
+
+    expect(migrated.paper.width).toBe(8);
+    expect(migrated.paper.height).toBe(13);
+    expect(
+      parseEditorWorkspaceSessionStorage(
+        JSON.stringify({
+          state: {
+            ...persisted,
+            paper: {
+              ...persisted.paper,
+              presetId: "legal",
+              name: "Legal",
+              width: 8.5,
+              height: 14,
+            },
+          },
+          version: 2,
+        }),
+      )?.paper,
+    ).toMatchObject({
+      width: 8,
+      height: 13,
+    });
   });
 
   it("rejects duplicate custom preset IDs from external session data", () => {

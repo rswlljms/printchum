@@ -12,7 +12,7 @@ import {
   EDITOR_WORKSPACE_SESSION_KEY,
   EDITOR_WORKSPACE_SESSION_VERSION,
   createPersistedEditorWorkspace,
-  migrateLegacyGuideSpacing,
+  migrateEditorWorkspace,
   parseEditorWorkspaceSessionStorage,
   parsePersistedEditorWorkspace,
   type PersistedEditorWorkspace,
@@ -1518,9 +1518,7 @@ export const useEditorStore = create<EditorStore>()(
         if (!restoredWorkspace) {
           return persistedState as PersistedEditorWorkspace;
         }
-        return version < EDITOR_WORKSPACE_SESSION_VERSION
-          ? migrateLegacyGuideSpacing(restoredWorkspace)
-          : restoredWorkspace;
+        return migrateEditorWorkspace(restoredWorkspace, version);
       },
       merge: (persistedState, currentState) => {
         const restoredWorkspace =

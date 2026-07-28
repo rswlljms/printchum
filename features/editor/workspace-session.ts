@@ -27,7 +27,7 @@ export type PersistedEditorWorkspace = Pick<
 
 export const EDITOR_WORKSPACE_SESSION_KEY =
   "printchum-editor-workspace";
-export const EDITOR_WORKSPACE_SESSION_VERSION = 2;
+export const EDITOR_WORKSPACE_SESSION_VERSION = 3;
 
 const photoSizeItemSessionSchema = z.object({
   id: z.string().min(1),
@@ -74,6 +74,7 @@ const persistedStorageEnvelopeSchema = z.object({
   state: z.unknown(),
   version: z.union([
     z.literal(1),
+    z.literal(2),
     z.literal(EDITOR_WORKSPACE_SESSION_VERSION),
   ]),
 });
@@ -104,6 +105,34 @@ export function migrateLegacyGuideSpacing(
         fromInches(0.1, workspace.paper.unit),
     },
   };
+}
+
+export function migratePhilippineLegalPaper(
+  workspace: PersistedEditorWorkspace,
+): PersistedEditorWorkspace {
+  if (workspace.paper.presetId !== "legal") {
+    return workspace;
+  }
+
+  return {
+    ...workspace,
+    paper: {
+      ...workspace.paper,
+      width: fromInches(8, workspace.paper.unit),
+      height: fromInches(13, workspace.paper.unit),
+    },
+  };
+}
+
+export function migrateEditorWorkspace(
+  workspace: PersistedEditorWorkspace,
+  version: number,
+): PersistedEditorWorkspace {
+  const guideMigrated =
+    version < 2 ? migrateLegacyGuideSpacing(workspace) : workspace;
+  return version < 3
+    ? migratePhilippineLegalPaper(guideMigrated)
+    : guideMigrated;
 }
 
 function parseCustomPaperPreset(
@@ -206,9 +235,7 @@ export function parseEditorWorkspaceSessionStorage(
     if (!workspace) {
       return null;
     }
-    return envelope.data.version === 1
-      ? migrateLegacyGuideSpacing(workspace)
-      : workspace;
+    return migrateEditorWorkspace(workspace, envelope.data.version);
   } catch {
     return null;
   }
