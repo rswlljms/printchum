@@ -141,10 +141,7 @@ test("opens a private print preview with scale guidance and no app navigation", 
   await expect(options).toContainText("100% or Actual Size");
   await expect(options.getByText("Printed details")).toHaveCount(0);
   await expect(options).toContainText(
-    "Print uses the current layout settings for guides, labels, nameplates, and background.",
-  );
-  await expect(options).toContainText(
-    "Your print layout remains in this browser session.",
+    "Match the printer paper to Letter / Short Bond.",
   );
   await chooseSelectOption(
     options.getByRole("combobox", { name: "Page range" }),

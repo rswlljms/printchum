@@ -117,7 +117,7 @@ export function EditorWorkspace() {
     >
       <div className="mb-8 border-b border-[var(--gray-200)] pb-6">
         <div>
-          <p className="micro-label">01 — editor</p>
+          <p className="micro-label">Editor</p>
           <h2 className="font-display mt-2 text-4xl leading-none text-[var(--ink)]">Create Layout</h2>
           <p className="mt-3 text-sm text-[var(--gray-500)]">
             Configure a print sheet and preview deterministic placement in real time.

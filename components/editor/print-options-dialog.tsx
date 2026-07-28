@@ -134,7 +134,7 @@ export function PrintOptionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <p className="micro-label">09 — physical output</p>
+          <p className="micro-label">Physical output</p>
           <DialogTitle>Print Layout</DialogTitle>
           <DialogDescription>
             Review the selected pages before opening the browser print dialog.
@@ -160,40 +160,29 @@ export function PrintOptionsDialog({
             onSelectionChange={setSelection}
             onCustomRangeChange={setCustomRange}
           />
-          <p className="text-xs leading-5 text-[var(--gray-500)]">
-            Print uses the current layout settings for guides, labels,
-            nameplates, and background.
-          </p>
         </div>
 
-        <ExportWarningList warnings={validation.warnings} />
-        {validation.error && !selected.error ? (
-          <p
-            className="rounded-xl border border-[var(--gray-300)] p-3 text-xs font-medium"
-            role="alert"
-          >
-            {validation.error}
-          </p>
-        ) : null}
-        <div className="space-y-2 rounded-xl bg-[var(--gray-50)] p-4 text-xs leading-5">
-          <p className="font-semibold">
-            For accurate physical dimensions, print at 100% or Actual Size.
-            Disable Fit to Page or Scale to Fit in the browser or printer
-            dialog.
-          </p>
-          <p>
-            Confirm that the selected printer paper matches the PrintChum
-            paper setting.
-          </p>
-          <p className="text-[var(--gray-500)]">
-            Printer hardware and driver settings may slightly affect physical
-            output. Verify the first printed sheet with a ruler before
-            producing a large batch.
-          </p>
+        <div className="mt-5 space-y-3">
+          <ExportWarningList warnings={validation.warnings} />
+          {validation.error && !selected.error ? (
+            <p
+              className="rounded-xl border border-[var(--gray-300)] p-3 text-xs font-medium"
+              role="alert"
+            >
+              {validation.error}
+            </p>
+          ) : null}
+          <div className="space-y-1.5 rounded-xl bg-[var(--gray-50)] p-3 text-xs leading-5">
+            <p className="font-semibold">
+              Print at 100% or Actual Size. Turn off Fit to Page or Scale to
+              Fit.
+            </p>
+            <p className="text-[var(--gray-500)]">
+              Match the printer paper to {state.paper.name}. Check the first
+              sheet with a ruler before printing a batch.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-[var(--gray-500)]">
-          Your print layout remains in this browser session.
-        </p>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

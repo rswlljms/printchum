@@ -200,7 +200,7 @@ export function PdfExportDialog({
     <Dialog open={open} onOpenChange={running ? undefined : onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <p className="micro-label">09 — physical output</p>
+          <p className="micro-label">Physical output</p>
           <DialogTitle>Download PDF</DialogTitle>
           <DialogDescription>
             Export exact physical pages from the current layout.
@@ -267,31 +267,33 @@ export function PdfExportDialog({
           </div>
         </div>
 
-        <ExportWarningList warnings={validation.warnings} />
-        {(validation.error && !selected.error) || error ? (
-          <p
-            className="rounded-xl border border-[var(--gray-300)] p-3 text-xs font-medium"
-            role="alert"
-            tabIndex={-1}
-          >
-            {error ?? validation.error}
+        <div className="mt-5 space-y-3">
+          <ExportWarningList warnings={validation.warnings} />
+          {(validation.error && !selected.error) || error ? (
+            <p
+              className="rounded-xl border border-[var(--gray-300)] p-3 text-xs font-medium"
+              role="alert"
+              tabIndex={-1}
+            >
+              {error ?? validation.error}
+            </p>
+          ) : null}
+          <p className="text-xs text-[var(--gray-500)]">
+            Your PDF is generated in this browser and is not uploaded to
+            PrintChum.
           </p>
-        ) : null}
-        <p className="text-xs text-[var(--gray-500)]">
-          Your PDF is generated in this browser and is not uploaded to
-          PrintChum.
-        </p>
-        {running || status === "completed" || status === "cancelled" ? (
-          <p className="text-xs font-medium" aria-live="polite">
-            {status === "rendering-pages"
-              ? `Rendering page ${progress.current} of ${progress.total}…`
-              : status === "completed"
-                ? "PDF downloaded."
-                : status === "cancelled"
-                  ? "Export cancelled."
-                  : `${status.replace("-", " ")}…`}
-          </p>
-        ) : null}
+          {running || status === "completed" || status === "cancelled" ? (
+            <p className="text-xs font-medium" aria-live="polite">
+              {status === "rendering-pages"
+                ? `Rendering page ${progress.current} of ${progress.total}…`
+                : status === "completed"
+                  ? "PDF downloaded."
+                  : status === "cancelled"
+                    ? "Export cancelled."
+                    : `${status.replace("-", " ")}…`}
+            </p>
+          ) : null}
+        </div>
 
         <DialogFooter>
           {running ? (
