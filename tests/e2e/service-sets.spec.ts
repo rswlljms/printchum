@@ -10,12 +10,16 @@ test("reviews and applies a Service Set through the authoritative preview", asyn
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Review Set A" }).click();
   const details = page.getByRole("dialog", { name: "Set A" });
   await expect(details).toContainText("4 pcs");
   await expect(details).toContainText("Letter / Short Bond");
   await details.getByRole("button", { name: "Apply Service Set" }).click();
+  await page
+    .getByRole("dialog", { name: "Apply Service Set?" })
+    .getByRole("button", { name: "Apply Service Set" })
+    .click();
 
   await expect(page.locator("[data-photo-size-id]")).toHaveCount(1);
   await expect(
@@ -34,7 +38,7 @@ test("reviews and applies a Service Set through the authoritative preview", asyn
 test("confirms replacement, tracks modification, and reapplies the set", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Add 2 × 2 photo size" }).click();
 
   await page.getByRole("button", { name: "Review Set B" }).click();
@@ -79,7 +83,7 @@ test("confirms replacement, tracks modification, and reapplies the set", async (
 test("creates and removes a photo-free custom Service Set in the editor", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Custom set" }).click();
   const dialog = page.getByRole("dialog", { name: "Create Service Set" });
   await dialog
@@ -114,7 +118,7 @@ test("creates and removes a photo-free custom Service Set in the editor", async 
 test("removes a built-in Service Set from its details dialog", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   const setCard = page.getByRole("button", { name: "Review Set A" });
 
   await setCard.click();

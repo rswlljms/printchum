@@ -5,7 +5,7 @@ import { chooseSelectOption } from "./helpers/select-option";
 test("uses the five-section editor order without Passport Presets", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
 
   const configuration = page.getByRole("complementary", {
     name: "Layout configuration",
@@ -33,7 +33,7 @@ test("uses the five-section editor order without Passport Presets", async ({
 test("starts every selected standard photo size at quantity one", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
 
   for (const sizeName of ["1 × 1", "Wallet", "Half Body"]) {
     await page
@@ -54,7 +54,7 @@ test("starts every selected standard photo size at quantity one", async ({
 test("increments a repeated preset and clears all selected sizes", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   const addSize = page.getByRole("button", {
     name: "Add 2 × 2 photo size",
   });
@@ -83,7 +83,7 @@ test("adds, edits, duplicates, and removes a custom photo size", async ({
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Add custom photo size" }).click();
   const addDialog = page.getByRole("dialog", {
     name: "Add custom photo size",
@@ -147,7 +147,7 @@ test("adds, edits, duplicates, and removes a custom photo size", async ({
 test("shows a persistent warning for an oversized selected size", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Add custom photo size" }).click();
   const dialog = page.getByRole("dialog", { name: "Add custom photo size" });
   await dialog.getByRole("textbox", { name: "Name", exact: true }).fill("Oversized 12 × 12");

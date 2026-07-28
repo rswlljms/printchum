@@ -14,7 +14,7 @@ async function prepareLayout(
   page: Page,
   quantity: string,
 ): Promise<void> {
-  await page.goto("/editor");
+  await page.goto("/");
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
@@ -179,7 +179,7 @@ test("combines different people in one browser-only print layout", async ({
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   const fileInput = page.locator('input[type="file"]');
   await fileInput.setInputFiles({
     name: "person-one.png",

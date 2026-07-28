@@ -12,7 +12,7 @@ test("selects standard paper, changes orientation, and preserves A4 dimensions a
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
@@ -71,7 +71,7 @@ test("selects standard paper, changes orientation, and preserves A4 dimensions a
 test("validates paper margin and updates Canvas-only guides and labels", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
@@ -108,7 +108,7 @@ test("validates paper margin and updates Canvas-only guides and labels", async (
 test("creates, applies, duplicates, renames, and deletes session-only custom paper presets", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await page.goto("/");
   await page.getByRole("button", { name: "Use Custom paper" }).click();
 
   const createDialog = page.getByRole("dialog", {

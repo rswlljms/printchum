@@ -15,7 +15,7 @@ test("restores non-photo workspace settings after reload without persisting the 
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
@@ -67,7 +67,10 @@ test("restores non-photo workspace settings after reload without persisting the 
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
-  await expect(page.locator("[data-photo-size-id]")).toHaveCount(2);
+  await expect(page.locator("[data-photo-size-id]")).toHaveCount(1);
+  await expect(
+    page.getByRole("spinbutton", { name: "Quantity for 2 × 2" }),
+  ).toHaveValue("2");
 
   expect(consoleErrors).toEqual([]);
 });

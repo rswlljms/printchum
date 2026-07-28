@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("redirects to the single-page editor and shows its compact shell", async ({ page }) => {
+test("shows the workspace at the canonical root URL", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -10,7 +10,7 @@ test("redirects to the single-page editor and shows its compact shell", async ({
 
   await page.goto("/");
 
-  await expect(page).toHaveURL(/\/editor$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: "PrintChum Workspace" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create Layout" }).first()).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toHaveCount(0);
@@ -19,6 +19,9 @@ test("redirects to the single-page editor and shows its compact shell", async ({
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.reload();
   await expect(page.locator("html")).toHaveClass(/dark/);
+
+  await page.goto("/editor");
+  await expect(page).toHaveURL(/\/$/);
 
   expect(consoleErrors).toEqual([]);
 });

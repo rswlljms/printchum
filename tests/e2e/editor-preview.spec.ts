@@ -8,7 +8,7 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
     }
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await expect(
     page.locator('[data-workspace-accent="halftone"]'),
   ).toBeVisible();

@@ -108,8 +108,8 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The root route redirects
-to the PrintChum editor.
+Open [http://localhost:3000](http://localhost:3000) to use the PrintChum
+workspace.
 
 ## Available commands
 

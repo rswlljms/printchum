@@ -39,7 +39,7 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
     };
   });
 
-  await page.goto("/editor");
+  await page.goto("/");
   await page
     .getByRole("button", { name: "Add 2 × 2 photo size" })
     .click();
