@@ -79,6 +79,19 @@ test("keeps photo editing local and cleans up the object URL", async ({ page }) 
   );
   await zoom.fill("1.5");
   await expect(zoom).toHaveValue("1.5");
+  const zoomValue = page.getByRole("spinbutton", { name: "Zoom value" });
+  await expect(zoomValue).toHaveValue("1.50");
+  await zoomValue.fill("2.25");
+  await zoomValue.press("Enter");
+  await expect(zoom).toHaveValue("2.25");
+
+  const rotation = page.getByRole("slider", { name: "Rotation" });
+  const rotationValue = page.getByRole("spinbutton", {
+    name: "Rotation value",
+  });
+  await rotationValue.fill("-45");
+  await rotationValue.press("Enter");
+  await expect(rotation).toHaveValue("-45");
   await expect
     .poll(() =>
       page.evaluate(

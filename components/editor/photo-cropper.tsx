@@ -2,7 +2,7 @@
 
 import { Crosshair, RotateCcw } from "lucide-react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { CropMode } from "@/features/editor/types";
@@ -49,6 +49,74 @@ export function PhotoCropper() {
 type PhotoCropperSessionProps = {
   sourceObjectUrl: string;
 };
+
+type NumericCropInputProps = {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  decimals: number;
+  suffix: string;
+  onValueChange: (value: number) => void;
+};
+
+function NumericCropInput({
+  label,
+  value,
+  min,
+  max,
+  step,
+  decimals,
+  suffix,
+  onValueChange,
+}: NumericCropInputProps) {
+  const formatValue = (nextValue: number): string =>
+    nextValue.toFixed(decimals);
+  const [draft, setDraft] = useState(() => formatValue(value));
+
+  function commitValue(): void {
+    const parsedValue = Number(draft);
+
+    if (!Number.isFinite(parsedValue)) {
+      setDraft(formatValue(value));
+      return;
+    }
+
+    const nextValue = Math.max(min, Math.min(parsedValue, max));
+    setDraft(formatValue(nextValue));
+    onValueChange(nextValue);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+    if (event.key === "Enter") {
+      event.currentTarget.blur();
+    }
+
+    if (event.key === "Escape") {
+      setDraft(formatValue(value));
+      event.currentTarget.blur();
+    }
+  }
+
+  return (
+    <span className="flex items-center gap-1 font-technical text-[var(--gray-600)]">
+      <input
+        aria-label={`${label} value`}
+        className="w-[4.75rem] rounded-md border border-[var(--gray-200)] bg-[var(--gray-50)] px-2 py-1 text-right text-xs text-[var(--ink)] outline-none transition-colors focus:border-[var(--ink)]"
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commitValue}
+        onKeyDown={handleKeyDown}
+      />
+      <span aria-hidden="true">{suffix}</span>
+    </span>
+  );
+}
 
 function PhotoCropperSession({
   sourceObjectUrl,
@@ -132,12 +200,24 @@ function PhotoCropperSession({
       </fieldset>
 
       <div className="space-y-4">
-        <label className="block">
+        <div>
           <span className="flex items-center justify-between text-xs text-[var(--gray-600)]">
-            <span>Zoom</span>
-            <span className="font-technical">{crop.zoom.toFixed(2)}×</span>
+            <label htmlFor="crop-zoom">Zoom</label>
+            <NumericCropInput
+              key={`zoom-${crop.zoom}`}
+              label="Zoom"
+              value={crop.zoom}
+              min={1}
+              max={3}
+              step={0.01}
+              decimals={2}
+              suffix="×"
+              onValueChange={setCropZoom}
+            />
           </span>
           <input
+            id="crop-zoom"
+            aria-label="Zoom"
             className="mt-2 w-full accent-[var(--ink)]"
             type="range"
             min="1"
@@ -146,13 +226,25 @@ function PhotoCropperSession({
             value={crop.zoom}
             onChange={(event) => setCropZoom(Number(event.target.value))}
           />
-        </label>
-        <label className="block">
+        </div>
+        <div>
           <span className="flex items-center justify-between text-xs text-[var(--gray-600)]">
-            <span>Rotation</span>
-            <span className="font-technical">{Math.round(crop.rotation)}°</span>
+            <label htmlFor="crop-rotation">Rotation</label>
+            <NumericCropInput
+              key={`rotation-${crop.rotation}`}
+              label="Rotation"
+              value={crop.rotation}
+              min={-180}
+              max={180}
+              step={1}
+              decimals={0}
+              suffix="°"
+              onValueChange={setCropRotation}
+            />
           </span>
           <input
+            id="crop-rotation"
+            aria-label="Rotation"
             className="mt-2 w-full accent-[var(--ink)]"
             type="range"
             min="-180"
@@ -161,7 +253,7 @@ function PhotoCropperSession({
             value={crop.rotation}
             onChange={(event) => setCropRotation(Number(event.target.value))}
           />
-        </label>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
