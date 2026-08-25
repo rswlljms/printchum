@@ -11,3 +11,5 @@ test-results/
 npm-debug.log*
 debug.log
 .claude
+.agents
+skills-lock.json

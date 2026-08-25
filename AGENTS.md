@@ -175,7 +175,7 @@ Use the following stack unless an approved architectural decision replaces a spe
 ## External Services
 
 - PhotoRoom Remove Background API
-- Stripe Billing
+- Polar (Merchant of Record billing)
 - Vercel
 - Sentry when production monitoring is added
 
@@ -193,7 +193,7 @@ Use the following stack unless an approved architectural decision replaces a spe
 - Configure public `NEXT_PUBLIC_` values separately for development, preview,
   and production environments where their values differ.
 - Use the Node.js runtime for server routes that require full Node.js APIs,
-  Stripe SDK support, or external provider integrations.
+  billing provider SDK support, or external provider integrations.
 - Keep the application full-stack. Do not configure `output: "export"` when
   authentication, webhooks, or background-removal routes are present.
 - Vercel Functions have a limited request and response payload size. Before
@@ -556,7 +556,7 @@ It must not import:
 - Zustand
 - DOM APIs
 - Supabase
-- Stripe
+- Polar
 - PhotoRoom
 
 Suggested files:
@@ -886,7 +886,16 @@ Do not release the full annual AI-credit allowance immediately.
 
 # 13. Billing Rules
 
-Use Stripe Billing.
+Use Polar (polar.sh) as the billing provider.
+
+Polar is the Merchant of Record: it is the legal seller for each transaction,
+handles global VAT and sales tax, and issues payouts through Stripe Connect
+Express. Do not build custom tax calculation, tax remittance, or invoicing
+flows on top of it.
+
+Products and prices are configured in the Polar dashboard. Server routes
+create checkouts from Polar product price IDs and never accept plan or price
+identifiers from the browser.
 
 Required capabilities:
 
@@ -901,7 +910,9 @@ Required capabilities:
 - AI-credit packs
 - Webhook-driven subscription state
 
-Subscription state must be updated from verified Stripe webhooks.
+Subscription state must be updated from verified Polar webhooks. Verify
+webhook signatures with the Polar webhook secret and process events
+idempotently; duplicate deliveries are expected.
 
 Do not trust:
 
@@ -922,6 +933,11 @@ type SubscriptionStatus =
   | "expired"
   | "paused";
 ```
+
+Map Polar subscription statuses (`trialing`, `active`, `past_due`,
+`canceled`, `unpaid`, `incomplete_expired`) onto these application states in
+the webhook handlers. The application state, not the Polar payload, remains
+the source of truth for entitlements.
 
 ---
 
@@ -1071,7 +1087,7 @@ Avoid exposing:
 - Provider response bodies
 - Database internals
 - Secret identifiers
-- Stripe payload details
+- Polar payload details
 - PhotoRoom API details
 - Environment-variable names
 
@@ -1097,8 +1113,8 @@ Never expose these using `NEXT_PUBLIC_`:
 
 - Supabase service-role key
 - PhotoRoom API key
-- Stripe secret key
-- Stripe webhook secret
+- Polar access token
+- Polar webhook secret
 - Sentry server token
 
 ## Upload Validation
@@ -1267,7 +1283,7 @@ Also test:
 
 ```text
 Subscribe
-→ Stripe webhook received
+→ Polar webhook received
 → Paid entitlement activated
 → Background removal succeeds
 → Credit deducted
@@ -1363,7 +1379,7 @@ Follow this order unless the user explicitly changes priorities.
 
 ## Phase 8: Billing
 
-- Stripe products and prices
+- Polar products and prices
 - Monthly and yearly checkout
 - Webhooks
 - Billing portal
@@ -1453,7 +1469,7 @@ Use clear commit messages:
 ```text
 feat(editor): add custom paper dimensions
 fix(layout): prevent overlap after rotation
-feat(billing): add yearly Stripe checkout
+feat(billing): add yearly Polar checkout
 test(pdf): cover multi-page legal paper export
 refactor(layout): isolate unit conversion
 ```
@@ -1484,14 +1500,14 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 PHOTOROOM_API_KEY=
 
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+POLAR_ACCESS_TOKEN=
+POLAR_ORGANIZATION_ID=
+POLAR_WEBHOOK_SECRET=
 
-STRIPE_PRO_MONTHLY_PRICE_ID=
-STRIPE_PRO_YEARLY_PRICE_ID=
-STRIPE_STUDIO_MONTHLY_PRICE_ID=
-STRIPE_STUDIO_YEARLY_PRICE_ID=
+POLAR_PRO_MONTHLY_PRICE_ID=
+POLAR_PRO_YEARLY_PRICE_ID=
+POLAR_STUDIO_MONTHLY_PRICE_ID=
+POLAR_STUDIO_YEARLY_PRICE_ID=
 
 SENTRY_DSN=
 ```
@@ -1518,6 +1534,7 @@ Do not implement these without explicit approval:
 - Desktop companion app
 - Multi-region data storage
 - Background-removal provider replacement
+- Billing provider replacement (currently Polar)
 - Unlimited AI processing
 - Lifetime subscriptions
 
