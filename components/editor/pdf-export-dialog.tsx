@@ -4,6 +4,7 @@ import { Download, LoaderCircle, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import {
+  createDefaultExportToggles,
   ExportOptionToggles,
   type ExportToggleOptions,
 } from "@/components/editor/export-option-toggles";
@@ -58,12 +59,14 @@ export function PdfExportDialog({
   const [quality, setQuality] = useState<PdfOutputQuality>("high");
   const [filename, setFilename] = useState(createDefaultPdfFilename);
   const [openAfterExport, setOpenAfterExport] = useState(false);
-  const [toggles, setToggles] = useState<ExportToggleOptions>({
-    includeCuttingGuides: state.paper.cuttingGuidesEnabled,
-    includeSizeLabels: state.paper.sizeLabelsEnabled,
-    includeNameplates: true,
-    includeBackground: true,
-  });
+  const [toggles, setToggles] = useState<ExportToggleOptions>(() =>
+    createDefaultExportToggles({
+      photoSizes: state.photoSizes,
+      cuttingGuidesEnabled: state.paper.cuttingGuidesEnabled,
+      sizeLabelsEnabled: state.paper.sizeLabelsEnabled,
+      backgroundMode: state.backgroundMode,
+    }),
+  );
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);

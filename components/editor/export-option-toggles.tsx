@@ -1,11 +1,33 @@
 "use client";
 
+import type { PhotoSizeItem } from "@/features/editor/types";
+
 export type ExportToggleOptions = {
   includeCuttingGuides: boolean;
   includeSizeLabels: boolean;
   includeNameplates: boolean;
   includeBackground: boolean;
 };
+
+type ExportToggleDefaultsInput = {
+  photoSizes: PhotoSizeItem[];
+  cuttingGuidesEnabled: boolean;
+  sizeLabelsEnabled: boolean;
+  backgroundMode: "original" | "transparent" | "solid";
+};
+
+export function createDefaultExportToggles(
+  input: ExportToggleDefaultsInput,
+): ExportToggleOptions {
+  return {
+    includeCuttingGuides: input.cuttingGuidesEnabled,
+    includeSizeLabels: input.sizeLabelsEnabled,
+    includeNameplates: input.photoSizes.some(
+      (item) => item.nameplateEnabled && item.nameplate?.enabled,
+    ),
+    includeBackground: input.backgroundMode !== "original",
+  };
+}
 
 type ExportOptionTogglesProps = {
   value: ExportToggleOptions;

@@ -3,7 +3,10 @@
 import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import type { ExportToggleOptions } from "@/components/editor/export-option-toggles";
+import {
+  createDefaultExportToggles,
+  type ExportToggleOptions,
+} from "@/components/editor/export-option-toggles";
 import { ExportWarningList } from "@/components/editor/export-warning-list";
 import {
   PageRangeControl,
@@ -50,15 +53,18 @@ export function PrintOptionsDialog({
         : "1",
   );
   const printOptions = useMemo<ExportToggleOptions>(
-    () => ({
-      includeCuttingGuides: state.paper.cuttingGuidesEnabled,
-      includeSizeLabels: state.paper.sizeLabelsEnabled,
-      includeNameplates: true,
-      includeBackground: true,
-    }),
+    () =>
+      createDefaultExportToggles({
+        photoSizes: state.photoSizes,
+        cuttingGuidesEnabled: state.paper.cuttingGuidesEnabled,
+        sizeLabelsEnabled: state.paper.sizeLabelsEnabled,
+        backgroundMode: state.backgroundMode,
+      }),
     [
+      state.photoSizes,
       state.paper.cuttingGuidesEnabled,
       state.paper.sizeLabelsEnabled,
+      state.backgroundMode,
     ],
   );
   const totalPages = state.layoutResult?.pages.length ?? 0;
