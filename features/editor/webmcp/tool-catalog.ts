@@ -6,6 +6,7 @@ export type EditorToolCatalogEntry = {
   description: string;
   summary: string;
   permission: EditorToolPermission;
+  untrustedContentHint?: boolean;
 };
 
 // Single source of truth for the agent-facing tool surface and the in-app
@@ -22,6 +23,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Returns the current print layout state: paper settings, photo size items with quantities, selected service set, page count, active page, placed item count, paper utilization, unplaced items, and any layout error. Photo pixel data is never included.",
     permission: "read",
+    untrustedContentHint: true,
   },
   {
     name: "list-paper-presets",
@@ -30,6 +32,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Returns available standard paper presets (id, name, dimensions, unit) plus the user's saved custom paper presets. Use an id from this list as presetId in configure-paper.",
     permission: "read",
+    untrustedContentHint: true,
   },
   {
     name: "list-photo-size-presets",
@@ -38,6 +41,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Returns available photo size presets such as ID photos, passport, wallet, and portrait prints (id, name, dimensions, unit, default quantity). Use an id from this list as presetId in add-photo-size.",
     permission: "read",
+    untrustedContentHint: true,
   },
   {
     name: "list-service-sets",
@@ -46,6 +50,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Returns the user's saved service sets (packages of photo sizes, paper, and pricing) that can be applied to the editor in one step.",
     permission: "read",
+    untrustedContentHint: true,
   },
   {
     name: "list-nameplate-presets",
@@ -62,6 +67,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Changes the print sheet configuration. Provide presetId to switch to a standard paper, or width/height/unit for custom dimensions. Optionally also set orientation, margin, spacing, and cutting guides. Margin and spacing values are interpreted in the resulting paper display unit. The preview updates immediately.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "add-photo-size",
@@ -70,6 +76,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Adds a photo size to the layout by presetId or custom width/height/unit, optionally with a copy quantity, and the preview updates immediately with the new placement. Returns the created item id needed by update-photo-size, remove-photo-size, and configure-nameplate.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "update-photo-size",
@@ -78,6 +85,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Updates an existing photo size item: change quantity, allowRotation, or enable or disable its nameplate. The preview updates immediately. Identify the item with the itemId returned when it was added or listed in get-editor-summary.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "remove-photo-size",
@@ -86,6 +94,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Removes a photo size item from the layout and recalculates placement; the preview updates immediately.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "apply-service-set",
@@ -94,6 +103,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Applies one of the user's service sets, replacing the current photo sizes and paper configuration with the package definition. The preview updates immediately. Disabled service sets are reported instead of applied.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "configure-nameplate",
@@ -102,6 +112,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Creates or updates the nameplate attached to a photo size item, and the nameplate renders on the preview immediately. Optionally start from presetId (full-name, name-and-id, name-id-department, custom), then override text lines (name, ID number, department), position relative to the photo, font size and weight, alignment, and colors.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "set-preview-page",
@@ -110,6 +121,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Shows the layout page the user should look at next in the canvas preview. Page numbers start at 1; get-editor-summary reports pageCount and the current activePageNumber.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "set-background",
@@ -118,6 +130,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Sets the photo background treatment: original keeps the photo as uploaded, solid composites the photo over the given hex color (defaults to white), and transparent is reserved for photos whose background has been removed. The preview updates immediately.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "set-crop-mode",
@@ -126,6 +139,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Chooses how the user's crop fills each photo size: keep-head-size preserves the subject's apparent size across sizes, fill-frame fills each frame and may crop edges, and fit-with-padding fits the whole crop inside the frame with padding. The preview updates immediately.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "save-service-set",
@@ -134,6 +148,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Saves the current photo sizes and paper configuration as a reusable service set with the given name and optional price, and the new service set appears in the user's list immediately for later use with apply-service-set.",
     permission: "write",
+    untrustedContentHint: true,
   },
   {
     name: "export-pdf",
@@ -142,6 +157,7 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Generates a print-ready PDF of all pages at exact physical dimensions and starts the browser download immediately. Requires a loaded photo and at least one placed photo size. Returns only file metadata; image data stays in the browser. A user-visible download appears in the browser.",
     permission: "execute",
+    untrustedContentHint: true,
   },
   {
     name: "open-print-dialog",
@@ -150,5 +166,6 @@ export const editorToolCatalog: readonly EditorToolCatalogEntry[] = [
     description:
       "Opens the print options dialog on screen immediately so the user can review printer settings (paper size match, Actual Size scaling, no margins) and confirm printing. Printing always requires explicit human confirmation.",
     permission: "execute",
+    untrustedContentHint: true,
   },
 ];

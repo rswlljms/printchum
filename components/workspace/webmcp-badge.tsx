@@ -9,7 +9,12 @@ import { WebMcpDialogContent } from "./webmcp-dialog";
 import { WebMcpStatusDot } from "./webmcp-status-dot";
 
 function badgeLabel(status: string, registeredCount: number): string {
-  if (status === "registered" && registeredCount > 0) {
+  if (
+    (status === "registered" ||
+      status === "partial" ||
+      status === "blocked") &&
+    registeredCount > 0
+  ) {
     return `WebMCP · ${registeredCount} tools`;
   }
   return "WebMCP";
@@ -38,12 +43,20 @@ export function WebMcpBadge() {
           type="button"
           aria-label="View WebMCP agent tools"
           className={`flex h-8 items-center gap-2 rounded-full border border-[var(--gray-300)] pl-2 pr-3 transition-colors duration-150 hover:bg-[var(--gray-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] ${
-            status === "registered"
+            status === "registered" ||
+            status === "partial" ||
+            status === "blocked"
               ? "text-[var(--ink)]"
               : "text-[var(--gray-500)]"
           }`}
         >
-          <WebMcpStatusDot active={status === "registered"} />
+          <WebMcpStatusDot
+            active={
+              status === "registered" ||
+              status === "partial" ||
+              (status === "blocked" && registeredCount > 0)
+            }
+          />
           <span className="micro-label uppercase">
             {badgeLabel(status, registeredCount)}
           </span>

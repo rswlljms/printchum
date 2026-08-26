@@ -109,6 +109,24 @@ function statusCopy(status: string, registeredCount: number) {
       label: "Blocked by permissions policy",
       detail:
         "This page's permissions policy prevents agent tool registration.",
+      count: `${registeredCount} available`,
+      active: registeredCount > 0,
+    };
+  }
+  if (status === "partial") {
+    return {
+      label: "Partially available",
+      detail:
+        "Some agent tools could not be registered. The available tools remain usable while this page is open.",
+      count: `${registeredCount} available`,
+      active: true,
+    };
+  }
+  if (status === "failed") {
+    return {
+      label: "Registration failed",
+      detail:
+        "This browser supports WebMCP, but the agent tools could not be registered.",
       count: "0 available",
       active: false,
     };

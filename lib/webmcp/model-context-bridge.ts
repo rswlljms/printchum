@@ -16,13 +16,15 @@ export function isWebMcpSupported(): boolean {
     typeof window !== "undefined" &&
     typeof document !== "undefined" &&
     "modelContext" in document &&
-    document.modelContext != null
+    document.modelContext != null &&
+    typeof document.modelContext.registerTool === "function"
   );
 }
 
 export type ModelContextRegistrationResult = {
+  status: "registered" | "partial" | "blocked" | "failed" | "aborted";
   registeredCount: number;
-  blocked: boolean;
+  totalCount: number;
 };
 
 /**
@@ -35,12 +37,12 @@ export async function registerModelContextTools(
   signal: AbortSignal,
 ): Promise<ModelContextRegistrationResult> {
   if (!isWebMcpSupported()) {
-    return { registeredCount: 0, blocked: false };
+    return { status: "failed", registeredCount: 0, totalCount: tools.length };
   }
   let registeredCount = 0;
   for (const tool of tools) {
     if (signal.aborted) {
-      break;
+      return { status: "aborted", registeredCount, totalCount: tools.length };
     }
     try {
       await document.modelContext?.registerTool(tool, { signal });
@@ -52,15 +54,24 @@ export async function registerModelContextTools(
       ) {
         // Cleanup aborted registration (StrictMode remount or unmount);
         // expected, so stop silently without warning.
-        return { registeredCount, blocked: false };
+        return { status: "aborted", registeredCount, totalCount: tools.length };
       }
       if (error instanceof DOMException && error.name === "NotAllowedError") {
         // Permissions-Policy disabled tool registration; degrade silently.
         console.warn("WebMCP tools are disabled by permissions policy.");
-        return { registeredCount, blocked: true };
+        return { status: "blocked", registeredCount, totalCount: tools.length };
       }
       console.warn(`WebMCP: tool "${tool.name}" could not be registered.`, error);
     }
   }
-  return { registeredCount, blocked: false };
+  return {
+    status:
+      registeredCount === tools.length
+        ? "registered"
+        : registeredCount > 0
+          ? "partial"
+          : "failed",
+    registeredCount,
+    totalCount: tools.length,
+  };
 }

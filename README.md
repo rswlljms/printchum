@@ -7,6 +7,12 @@ ID photo layouts. A user can select local photos, crop them once, assign
 multiple physical sizes and quantities, arrange the results across standard or
 custom paper, preview every page, and print or download the layout as a PDF.
 
+This repository is currently an open-source browser workspace prototype. The
+editor, layout engine, Canvas preview, PDF export, print preview, service sets,
+and WebMCP integration are implemented. Authentication, billing, Supabase
+persistence, and external background removal are intentionally reserved for a
+later release.
+
 Customer photos remain in browser memory during the active session. They are
 not uploaded or permanently stored by the current application.
 
@@ -104,7 +110,9 @@ and physical output deterministic across every renderer.
 ### Install and run
 
 ```bash
-npm install
+cp .env.example .env.local
+npm ci
+npm run typecheck
 npm run dev
 ```
 
@@ -122,6 +130,12 @@ npm run test:watch # Run Vitest in watch mode
 npm run test:e2e   # Run Playwright end-to-end tests
 npm run build      # Create a production build
 npm start          # Start the production server
+```
+
+Run the optional WebMCP execution test against a compatible Chromium build:
+
+```bash
+npm run test:e2e:webmcp
 ```
 
 Playwright starts or reuses the local Next.js development server at
@@ -145,6 +159,54 @@ stores/               Zustand editor state
 tests/                Vitest and Playwright coverage
 ```
 
+## WebMCP Integration
+
+PrintChum uses the browser-native WebMCP API as a progressive enhancement. It
+does not run an MCP server, expose a JSON-RPC endpoint, or send customer photos
+to an agent. Tools exist only while the editor is mounted in a compatible,
+secure browser context.
+
+The registration boundary uses `document.modelContext.registerTool` with one
+abort signal for the editor lifecycle:
+
+```ts
+const controller = new AbortController();
+
+for (const tool of createEditorToolRegistrations()) {
+  await document.modelContext?.registerTool(tool, {
+    signal: controller.signal,
+  });
+}
+
+// Abort on editor unmount. The browser unregisters the scoped tools.
+controller.abort();
+```
+
+The current catalog contains 17 tools:
+
+- Five read-only inspection tools for summaries and preset lists
+- Ten write tools for paper, photo sizes, service sets, nameplates, pages,
+  backgrounds, and crop mode
+- Two execute tools for PDF download and opening the human-confirmed print
+  dialog
+
+Registration is feature-detected. Unsupported browsers, an explicit
+`NEXT_PUBLIC_WEBMCP_ENABLED=false` kill switch, Permissions Policy blocks, and
+partial registration failures leave the ordinary editor workflow functional.
+The response header keeps same-origin registration explicit with
+`tools=(self)`.
+
+WebMCP references:
+
+- [WebMCP specification](https://webmachinelearning.github.io/webmcp)
+- [Chrome imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- [Chrome security guidance](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
+
+Tool arguments and results are validated and compact. Results never contain
+photo bytes, object URLs, source file names, crop bitmaps, or nameplate text.
+The in-memory activity list stores only tool name, outcome, and timestamp; it
+does not retain tool arguments or results.
+
 ## Deployment
 
 PrintChum is configured for Vercel's native Next.js integration.
@@ -157,6 +219,18 @@ PrintChum is configured for Vercel's native Next.js integration.
 Vercel automatically creates preview deployments for branches and pull
 requests and updates production when the configured production branch receives
 a new commit.
+
+For local configuration, copy `.env.example` to `.env.local`. Keep real
+credentials in the local ignored file or Vercel encrypted environment
+variables. No provider credentials are required for the current browser-only
+workspace.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, coding conventions, testing,
+privacy requirements, and pull request expectations. Security reports should
+follow [SECURITY.md](SECURITY.md). This project is released under the
+[MIT License](LICENSE).
 
 ## Product status
 

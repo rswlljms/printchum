@@ -43,7 +43,10 @@ import {
   updatePhotoSizeSchema,
 } from "./input-schemas";
 
-type Handler = (input: unknown) => EditorToolResult | Promise<EditorToolResult>;
+type Handler = (
+  input: unknown,
+  options: WebMCP.ToolExecuteCallbackOptions,
+) => EditorToolResult | Promise<EditorToolResult>;
 
 const toolBindings: Record<string, { schema: z.ZodType; handler: Handler }> = {
   "get-editor-summary": {
@@ -108,7 +111,7 @@ const toolBindings: Record<string, { schema: z.ZodType; handler: Handler }> = {
   },
   "export-pdf": {
     schema: exportPdfSchema,
-    handler: (input) => exportPdfHandler(input),
+    handler: (input, options) => exportPdfHandler(input, options),
   },
   "open-print-dialog": {
     schema: openPrintDialogSchema,
@@ -136,10 +139,26 @@ function executeAndRecord(
   name: string,
   handler: Handler,
   inputObject: Record<string, unknown>,
+  options: WebMCP.ToolExecuteCallbackOptions = {
+    signal: new AbortController().signal,
+  },
 ): Promise<EditorToolResult> {
+  const throwIfCancelled = (): void => {
+    if (options.signal.aborted) {
+      throw (
+        options.signal.reason ??
+        new DOMException("The tool execution was cancelled.", "AbortError")
+      );
+    }
+  };
+
   return Promise.resolve()
-    .then(() => handler(inputObject))
+    .then(() => {
+      throwIfCancelled();
+      return handler(inputObject, options);
+    })
     .then((result) => {
+      throwIfCancelled();
       useWorkspaceUiStore.getState().recordWebMcpActivity({
         name,
         outcome: result.ok ? "ok" : "failed",
@@ -147,7 +166,10 @@ function executeAndRecord(
       });
       return result;
     })
-    .catch(() => {
+    .catch((error: unknown) => {
+      if (options.signal.aborted) {
+        throw error;
+      }
       useWorkspaceUiStore.getState().recordWebMcpActivity({
         name,
         outcome: "failed",
@@ -178,11 +200,16 @@ export function createEditorToolRegistrations(): WebMCP.ModelContextTool[] {
       title: entry.title,
       description: entry.description,
       inputSchema: toInputSchema(binding.schema),
-      execute: (inputObject: Record<string, unknown>) =>
-        executeAndRecord(entry.name, binding.handler, inputObject),
+      execute: (
+        inputObject: Record<string, unknown>,
+        options: WebMCP.ToolExecuteCallbackOptions,
+      ) => executeAndRecord(entry.name, binding.handler, inputObject, options),
       // WebMCP exposes a binary read-only hint. PrintChum's finer write/execute
       // distinction remains in the catalog; both are non-read-only to agents.
-      annotations: { readOnlyHint: entry.permission === "read" },
+      annotations: {
+        readOnlyHint: entry.permission === "read",
+        untrustedContentHint: entry.untrustedContentHint ?? false,
+      },
     };
   });
 }

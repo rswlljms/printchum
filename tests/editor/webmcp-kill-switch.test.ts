@@ -41,17 +41,19 @@ describe("webmcp kill switch", () => {
     setEnv("false");
     const result = await registerEditorTools(new AbortController().signal);
     expect(result).toEqual({
+      status: "disabled",
       registeredCount: 0,
-      blocked: false,
-      disabled: true,
+      totalCount: 17,
     });
   });
 
   it("reports supported-but-unavailable instead of disabled on normal runtimes", async () => {
     setEnv(undefined);
     const result = await registerEditorTools(new AbortController().signal);
-    expect(result.blocked).toBe(false);
-    expect(result.disabled).toBe(false);
-    expect(result.registeredCount).toBe(0);
+    expect(result).toEqual({
+      status: "unsupported",
+      registeredCount: 0,
+      totalCount: 17,
+    });
   });
 });

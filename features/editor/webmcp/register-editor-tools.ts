@@ -6,11 +6,15 @@ import {
 } from "@/lib/webmcp/model-context-bridge";
 
 import { createEditorToolRegistrations } from "./tool-definitions";
+import { editorToolCatalog } from "./tool-catalog";
 
 export type EditorToolRegistrationResult =
-  ModelContextRegistrationResult & {
-    disabled: boolean;
-  };
+  | ModelContextRegistrationResult
+  | {
+      status: "disabled" | "unsupported";
+      registeredCount: 0;
+      totalCount: number;
+    };
 
 /**
  * Registers editor tools with the browser's model context. Safe to call in any
@@ -21,14 +25,29 @@ export async function registerEditorTools(
   signal: AbortSignal,
 ): Promise<EditorToolRegistrationResult> {
   if (!isWebMcpEnabled()) {
-    return { registeredCount: 0, blocked: false, disabled: true };
+    return {
+      status: "disabled",
+      registeredCount: 0,
+      totalCount: editorToolCatalog.length,
+    };
   }
   if (!isWebMcpSupported()) {
-    return { registeredCount: 0, blocked: false, disabled: false };
+    return {
+      status: "unsupported",
+      registeredCount: 0,
+      totalCount: editorToolCatalog.length,
+    };
   }
-  const result = await registerModelContextTools(
-    createEditorToolRegistrations(),
-    signal,
-  );
-  return { ...result, disabled: false };
+  try {
+    return await registerModelContextTools(
+      createEditorToolRegistrations(),
+      signal,
+    );
+  } catch {
+    return {
+      status: "failed",
+      registeredCount: 0,
+      totalCount: editorToolCatalog.length,
+    };
+  }
 }

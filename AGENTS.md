@@ -207,6 +207,7 @@ Use the following stack unless an approved architectural decision replaces a spe
 
 - Vitest
 - Playwright
+- WebMCP browser capability testing in Chromium when available
 
 ---
 
@@ -267,6 +268,7 @@ printchum/
 │   ├── billing/
 │   ├── entitlements/
 │   ├── layout-engine/
+│   ├── webmcp/
 │   ├── pdf/
 │   ├── printing/
 │   ├── supabase/
@@ -278,6 +280,8 @@ printchum/
 │
 ├── types/
 ├── tests/
+│   ├── editor/webmcp-*.test.ts
+│   └── e2e/webmcp-*.spec.ts
 ├── supabase/
 │   ├── migrations/
 │   └── seed.sql
@@ -543,6 +547,17 @@ Never send these to analytics:
 
 Track only high-level product events.
 
+## 6.5 WebMCP Data Boundary
+
+WebMCP tools run in the user's browser and must preserve the same privacy
+boundary as direct editor interactions. Tool arguments and results are not an
+alternative storage channel. Do not place customer photos, image bytes,
+object URLs, file names, crop bitmaps, nameplate text, or full project state in
+analytics, server logs, persistent browser storage, or tool activity history.
+
+The human-facing WebMCP activity list may contain only the tool name, outcome,
+and timestamp. It must not retain arguments or results.
+
 ---
 
 # 7. Layout Engine Rules
@@ -676,7 +691,351 @@ Manual placement must still produce the same normalized `LayoutResult` format.
 
 ---
 
-# 8. Canvas Rendering Rules
+# 8. WebMCP Integration Rules
+
+WebMCP is a progressive enhancement for the live PrintChum editor. It exposes
+selected browser-side editor actions as structured tools for compatible,
+browser-integrated AI agents. It is not a hosted MCP server, does not add a
+JSON-RPC endpoint, and does not replace server-side APIs used for
+authentication, billing, background removal, or future integrations.
+
+The current WebMCP API is an emerging Draft Community Group Report, not a W3C
+Standard. Treat the browser API as experimental and keep normal pointer,
+keyboard, form, export, and print workflows fully functional when WebMCP is
+missing, disabled, or rejected by browser policy.
+
+Authoritative references:
+
+- WebMCP specification: https://webmachinelearning.github.io/webmcp
+- Chrome imperative API: https://developer.chrome.com/docs/ai/webmcp/imperative-api
+- Chrome best practices: https://developer.chrome.com/docs/ai/webmcp/best-practices
+- Chrome tool security: https://developer.chrome.com/docs/ai/webmcp/secure-tools
+- WebMCP versus MCP: https://developer.chrome.com/docs/ai/webmcp/compare-mcp
+- Browser implementation status: https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md
+
+## 8.1 Platform Contract
+
+- Use `document.modelContext`, not a server route or a standalone MCP
+  transport, for the native WebMCP integration.
+- Feature-detect `document.modelContext` and its methods before using it. Do
+  not assume that a browser, a normal Chromium build, or a headless test
+  runner supports WebMCP.
+- WebMCP requires a secure context. Production and preview deployments must
+  use HTTPS. Local development may use the browser's localhost secure-context
+  exception, but API availability still depends on the browser build and
+  feature configuration.
+- WebMCP tools are ephemeral and tab-bound. They exist only while the editor
+  document is open and the relevant component is mounted. Do not design a
+  background job, persistent agent session, or server workflow around tool
+  registration.
+- The browser mediates discovery and execution. Same-origin tools are the
+  default. Do not add `exposedTo`, `fromOrigins`, cross-origin iframes, or
+  tool delegation unless a separately approved use case identifies the exact
+  trusted origins and threat model.
+- Do not use the deprecated `navigator.modelContext` alias in new code. If a
+  compatibility fallback is ever required for a specific browser release, it
+  must be isolated in `lib/webmcp/model-context-bridge.ts`, documented with a
+  removal condition, and covered by tests.
+
+## 8.2 Repository Architecture
+
+Keep the WebMCP implementation in domain-specific modules:
+
+```text
+lib/webmcp/
+└── model-context-bridge.ts
+
+features/editor/webmcp/
+├── tool-catalog.ts
+├── input-schemas.ts
+├── handlers.ts
+├── tool-definitions.ts
+└── register-editor-tools.ts
+
+components/editor/
+└── webmcp-registration.tsx
+
+components/workspace/
+├── webmcp-badge.tsx
+├── webmcp-dialog.tsx
+└── webmcp-status-dot.tsx
+
+types/webmcp.d.ts
+tests/editor/webmcp-*.test.ts
+```
+
+Responsibilities:
+
+- `lib/webmcp/model-context-bridge.ts` owns feature detection, the deployment
+  kill switch, registration, abort handling, and browser-specific error
+  handling. It must remain free of editor business logic.
+- `features/editor/webmcp/tool-catalog.ts` is the human-readable and
+  agent-facing catalog. Keep tool names, titles, descriptions, summaries, and
+  PrintChum permission categories together. This module must stay lightweight
+  and import-free so workspace chrome does not pull PDF or image dependencies
+  into its bundle.
+- `features/editor/webmcp/input-schemas.ts` contains strict Zod schemas for
+  every tool. Convert schemas to JSON Schema only at the WebMCP registration
+  boundary. Runtime validation remains mandatory because agents can send
+  malformed or adversarial input.
+- `features/editor/webmcp/handlers.ts` adapts validated tool input to the
+  existing Zustand editor store and domain services. Handlers must reuse the
+  same layout, crop, PDF, and print logic as direct UI actions; never duplicate
+  placement or output logic for agents.
+- `features/editor/webmcp/tool-definitions.ts` joins each catalog entry to one
+  schema and one handler. Keep the binding complete and fail loudly during
+  development if the catalog and implementation drift apart.
+- `features/editor/webmcp/register-editor-tools.ts` provides the editor-level
+  registration entry point and must return explicit disabled, unsupported,
+  blocked, and partially registered outcomes.
+- `components/editor/webmcp-registration.tsx` is a client component mounted
+  with the editor. It creates an `AbortController`, registers tools after mount,
+  and aborts registration on unmount. React Strict Mode must not leave duplicate
+  tools or warnings.
+- Workspace WebMCP UI may show availability, the catalog, and minimal activity,
+  but must never show or retain tool arguments or result payloads.
+- `types/webmcp.d.ts` may augment `webmcp-types` only for verified API gaps.
+  Keep version-specific notes and the corresponding official source next to
+  the augmentation.
+
+## 8.3 Tool Design Contract
+
+Every tool must:
+
+- Perform one clear function with a non-overlapping purpose.
+- Use a stable name containing only ASCII letters, numbers, `_`, `-`, or `.`;
+  keep the name at or below 30 characters where practical and never exceed the
+  WebMCP limit of 128 characters.
+- Have a concise, action-oriented description. Target no more than 500
+  characters for the description and 150 characters for each parameter
+  description.
+- Declare specific primitive types and bounded enums in `inputSchema`.
+- Accept user-level values where possible instead of requiring an agent to
+  perform unit conversions or infer internal IDs. When IDs are necessary,
+  provide a list/read tool that returns the valid IDs first.
+- Validate all input in the handler using the matching strict Zod schema and
+  return a safe, actionable error that does not expose stack traces or internal
+  state.
+- Update the visible editor state before resolving so the agent can rely on the
+  page being ready for the next action.
+- Return compact, JSON-serializable results. A single tool result should target
+  no more than 1.5K characters and must not include binary data.
+
+Use the WebMCP `readOnlyHint` annotation only for tools that do not change
+editor state. PrintChum's internal permission categories are more detailed:
+
+- `read`: inspect-only tools such as summaries and preset lists; annotate
+  `readOnlyHint: true`.
+- `write`: tools that change layout, paper, photo-size, nameplate, background,
+  crop-mode, page, or service-set state; annotate `readOnlyHint: false`.
+- `execute`: tools that initiate visible output actions such as PDF download or
+  opening the print dialog; annotate `readOnlyHint: false` and keep explicit
+  human confirmation where required.
+
+If a tool returns user-generated or externally sourced text, evaluate whether
+`untrustedContentHint: true` is appropriate. Do not add prompt-like
+instructions to tool descriptions or results. Tool descriptions are part of
+the model's input and must be treated as security-sensitive metadata.
+
+## 8.4 Current Editor Tool Surface
+
+The current implementation registers 17 editor tools. Keep the following
+groups and behavior stable unless the tool catalog, tests, UI copy, and any
+affected direct editor workflow are updated together:
+
+- Inspect: `get-editor-summary`, `list-paper-presets`,
+  `list-photo-size-presets`, `list-service-sets`, `list-nameplate-presets`.
+- Configure: `configure-paper`, `add-photo-size`, `update-photo-size`,
+  `remove-photo-size`, `apply-service-set`, `configure-nameplate`,
+  `set-preview-page`, `set-background`, `set-crop-mode`.
+- Save and print: `save-service-set`, `export-pdf`, `open-print-dialog`.
+
+The tool contract must preserve these invariants:
+
+- `get-editor-summary` returns layout metadata, paper settings, photo-size
+  metadata, and placement counts, never photo pixels.
+- Preset-list tools return IDs and dimensions, not customer images or
+  nameplate contents.
+- Layout mutations use the existing Zustand actions and authoritative
+  `calculateLayout()` result. They must respect unit normalization, margins,
+  spacing, rotation, pagination, overflow, and utilization rules.
+- `export-pdf` uses the same `createPdfExportInputFromEditorState` and PDF
+  service used by the direct export dialog. It may initiate a browser download
+  but returns only safe file metadata.
+- `open-print-dialog` may open the visible PrintChum print dialog but may not
+  silently print or bypass the user's confirmation.
+- WebMCP must not provide a tool that uploads a photo, reads a local file,
+  returns an object URL, exposes crop bitmaps, invokes background removal, or
+  sends image bytes to an agent. Background removal remains an explicit direct
+  user action through the existing server route and its entitlement/credit
+  checks.
+
+## 8.5 Registration Lifecycle
+
+Register only after the editor client component mounts and only when all of the
+following are true:
+
+1. The deployment kill switch is enabled.
+2. `document.modelContext` exists in the current secure browser context.
+3. The editor is mounted and its handlers can access the current Zustand state.
+
+Registration rules:
+
+- Register each tool with `document.modelContext.registerTool(tool, { signal })`.
+- Pass one `AbortSignal` for the editor registration scope. Aborting must
+  unregister the tools and stop any in-progress registration without treating
+  expected cleanup as an error.
+- Register tools deterministically in catalog order. Do not register duplicate
+  names, and do not silently replace a tool with a different schema.
+- Handle `NotAllowedError` as a permissions-policy block and degrade to the
+  normal editor. Handle unsupported APIs, duplicate registration, invalid
+  schemas, and other failures without breaking the editor.
+- If registration is partial, expose the actual registered count in the UI and
+  never claim that the full catalog is available.
+- If tools become state-dependent in a future route or editor mode, register
+  them only while usable and unregister them when that state ends. Avoid ghost
+  tools that describe controls the user cannot currently use.
+- If a tool receives an execution signal in a browser implementation that
+  supports it, forward the signal to cancellable async work such as `fetch()`
+  and PDF generation. Never continue a costly or side-effecting operation after
+  the agent or browser cancels it.
+
+## 8.6 Privacy and Security Boundary
+
+WebMCP does not weaken any PrintChum privacy rule:
+
+- Customer photos stay in browser memory by default. Tool registration and
+  execution must not persist `File`, `Blob`, `ArrayBuffer`, `ImageBitmap`,
+  canvas data, object URLs, or source file names.
+- Tool arguments and results must not be sent to analytics, Sentry, server
+  logs, activity-history APIs, local storage, session storage, IndexedDB,
+  cookies, URL parameters, or database tables.
+- The activity list may store only the tool name, `ok` or `failed` outcome, and
+  timestamp, with a small in-memory limit. It must not store arguments or
+  result objects.
+- Never include nameplate text, customer names, image hashes, signed URLs,
+  crop coordinates tied to an image, or full editor state in telemetry or
+  human-facing activity history.
+- Treat tool inputs, tool descriptions, preset metadata, and handler outputs as
+  untrusted content. Use strict validation, bounded strings and quantities,
+  allowlisted enums, and safe user-readable errors.
+- Read tools can still disclose private account or layout metadata. Do not
+  expose organization data, saved service sets, billing data, or future project
+  data beyond what the active user is authorized to see.
+- Write and execute tools are user-authorized capabilities, not authorization
+  substitutes. Server-side routes remain authoritative for authentication,
+  organization ownership, entitlements, billing, credits, rate limits, and
+  external provider calls.
+- Do not expose tools to another origin. If a future integration needs
+  cross-origin exposure, use only explicit HTTPS origins, configure both sides'
+  permission/origin policy, obtain approval, and add a threat-model review.
+- PDF export and printing are visible user actions. Never add silent printing,
+  hidden downloads, automatic checkout, destructive deletion, or other
+  consequential side effects behind a WebMCP call without explicit approval.
+
+## 8.7 Configuration and Deployment
+
+WebMCP uses no provider secret, API key, database table, server endpoint, or
+additional Vercel runtime. Required configuration is browser and deployment
+policy configuration only:
+
+```env
+# Optional public build-time kill switch. Unset or any non-off value enables
+# registration; false, 0, or off disables it.
+NEXT_PUBLIC_WEBMCP_ENABLED=true
+```
+
+Configuration rules:
+
+- `NEXT_PUBLIC_WEBMCP_ENABLED` is intentionally public because it controls
+  client behavior, not authorization. It must never be used as a server-side
+  security check.
+- Unset means enabled in the current implementation. Set it to `false`, `0`,
+  or `off` to disable registration without a code rollback. Keep the value
+  consistent across local, preview, and production environments and document
+  changes in the deployment record.
+- Keep the `Permissions-Policy` response header's `tools=(self)` directive in
+  `next.config.ts` for top-level same-origin registration. Do not broaden it to
+  `*` or delegate it to arbitrary iframe origins.
+- Keep existing CSP and security headers intact. WebMCP does not justify
+  `unsafe-eval`, wildcard `connect-src`, wildcard `script-src`, or weakened
+  frame protections in production.
+- Deploy through the native Next.js Vercel integration. Do not add an MCP
+  server, proxy, edge adapter, custom transport, or platform-specific runtime
+  solely for WebMCP.
+- Preview and production must remain HTTPS and must preserve the no-photo
+  persistence rule. A preview build must be treated as an agent-callable
+  surface when the browser supports WebMCP.
+- If the browser lacks WebMCP, do not ship a polyfill by default. A polyfill or
+  MCP bridge would create a separate security and support model and requires
+  explicit approval.
+
+## 8.8 Testing and Verification
+
+WebMCP tests must prove both capability behavior and graceful degradation:
+
+- Unit-test the kill switch for unset, truthy, and explicit off values.
+- Unit-test feature detection without `window`, without `document`, and
+  without `document.modelContext`.
+- Unit-test registration abort on unmount, mid-registration cancellation,
+  duplicate registration, `NotAllowedError`, invalid schemas, and unrelated
+  registration failures.
+- Unit-test catalog/handler/schema completeness, tool-name constraints,
+  annotations, compact result shapes, and the absence of image data from all
+  result builders.
+- Unit-test each handler's schema validation and safe error behavior. Include
+  oversized quantities, invalid units, unsupported preset IDs, invalid colors,
+  malformed names, unknown item IDs, oversized dimensions, and page overflow.
+- Verify that WebMCP handlers and direct UI actions produce the same layout,
+  PDF, and print behavior. Do not create WebMCP-only placement or export
+  implementations.
+- Run `npm run test` for unit coverage and `npm run typecheck` for the ambient
+  WebMCP typings.
+- Run `npm run test:e2e` for normal browser regression coverage. The tests must
+  pass or skip cleanly in browsers without WebMCP.
+- Set `WEBMCP_E2E=1` to opt into the WebMCP Playwright suite. This suite
+  requires a WebMCP-enabled Chromium build or origin-trial configuration and
+  uses the `--enable-features=WebMCPTesting` launch flag in the current setup.
+- The WebMCP E2E suite must verify discovery of all 17 tools, the five read-only
+  and twelve non-read-only annotations, representative read/write/output
+  executions, visible editor updates, PDF download behavior, human-gated
+  printing, and privacy-safe activity history.
+- Run the browser suite against the exact browser build used for release when
+  the API changes. WebMCP is experimental and may change independently of the
+  application dependencies.
+- Do not put customer photos, personal nameplate data, generated private PDFs,
+  or tool argument/result dumps in test fixtures, traces, snapshots, or CI
+  artifacts.
+
+## 8.9 Change Checklist
+
+Before adding or changing a WebMCP tool:
+
+1. Confirm that the capability belongs in the live browser editor and not in a
+   server API or future MCP server.
+2. Add one catalog entry with a clear name, title, description, summary, and
+   permission category.
+3. Add a strict Zod input schema with bounded values and useful descriptions.
+4. Implement a handler that calls existing domain/store logic and returns a
+   compact, JSON-safe result.
+5. Add the schema/handler binding and verify catalog completeness.
+6. Decide whether `readOnlyHint` or `untrustedContentHint` applies.
+7. Confirm that no photo bytes, object URLs, file names, crop bitmaps,
+   nameplate text, or full project state can enter arguments, results, logs, or
+   activity history.
+8. Add unit tests for valid input, invalid input, state changes, errors, and
+   privacy boundaries.
+9. Update the WebMCP UI grouping, count, and user-facing copy when the catalog
+   changes.
+10. Update the WebMCP E2E expected tool list and representative workflow.
+11. Verify unsupported-browser behavior, abort cleanup, permissions-policy
+   behavior, and the production kill switch.
+12. Re-check the official specification and Chrome documentation before relying
+   on a changed or newly introduced API member.
+
+---
+
+# 9. Canvas Rendering Rules
 
 Canvas is the live preview renderer.
 
@@ -708,7 +1067,7 @@ Do not use the preview canvas as the only source for high-quality PDF output.
 
 ---
 
-# 9. Crop Rules
+# 10. Crop Rules
 
 Use `react-easy-crop` for interactive cropping.
 
@@ -739,7 +1098,7 @@ Do not silently distort the image.
 
 ---
 
-# 10. PDF Generation Rules
+# 11. PDF Generation Rules
 
 Use `pdf-lib`.
 
@@ -773,7 +1132,7 @@ Do not:
 
 ---
 
-# 11. Direct Printing Rules
+# 12. Direct Printing Rules
 
 Provide two actions:
 
@@ -801,7 +1160,7 @@ Silent or one-click printer-agent support is a later feature.
 
 ---
 
-# 12. Subscription and Pricing Rules
+# 13. Subscription and Pricing Rules
 
 Initial plans:
 
@@ -837,7 +1196,7 @@ Initial plans:
 
 Business plan is deferred until multi-branch and bulk-processing features exist.
 
-## 12.1 Unlimited Exports
+## 13.1 Unlimited Exports
 
 Unlimited exports means:
 
@@ -856,7 +1215,7 @@ Do not deduct AI credits for:
 - Background color changes
 - Layout regeneration
 
-## 12.2 AI Credits
+## 13.2 AI Credits
 
 One AI credit equals one successful PhotoRoom background-removal operation.
 
@@ -874,7 +1233,7 @@ Purchased credits:
 - Must be tracked separately
 - Must not be silently removed on subscription downgrade
 
-## 12.3 Yearly Plans
+## 13.3 Yearly Plans
 
 Yearly subscriptions are billed once per year.
 
@@ -884,7 +1243,7 @@ Do not release the full annual AI-credit allowance immediately.
 
 ---
 
-# 13. Billing Rules
+# 14. Billing Rules
 
 Use Polar (polar.sh) as the billing provider.
 
@@ -941,7 +1300,7 @@ the source of truth for entitlements.
 
 ---
 
-# 14. Entitlement Rules
+# 15. Entitlement Rules
 
 Create a centralized entitlement layer.
 
@@ -969,7 +1328,7 @@ Both UI and server routes may consume entitlement data, but the server remains a
 
 ---
 
-# 15. Database Rules
+# 16. Database Rules
 
 Use organization-based ownership from the start.
 
@@ -1019,7 +1378,7 @@ Enable Row Level Security before exposing tables to the browser.
 
 ---
 
-# 16. Authentication and Authorization
+# 17. Authentication and Authorization
 
 Use Supabase Auth.
 
@@ -1043,7 +1402,7 @@ Do not rely only on frontend route hiding.
 
 ---
 
-# 17. Validation Rules
+# 18. Validation Rules
 
 Use Zod for all external input.
 
@@ -1077,7 +1436,7 @@ Never trust browser-submitted values.
 
 ---
 
-# 18. Error Handling
+# 19. Error Handling
 
 Use user-readable errors.
 
@@ -1103,7 +1462,7 @@ Log technical details only on the server, and never log image contents.
 
 ---
 
-# 19. Security Rules
+# 20. Security Rules
 
 ## Secrets
 
@@ -1154,7 +1513,7 @@ Do not log:
 
 ---
 
-# 20. UI and UX Rules
+# 21. UI and UX Rules
 
 Use a professional SaaS design.
 
@@ -1221,7 +1580,7 @@ Do not make critical functionality icon-only.
 
 ---
 
-# 21. Performance Rules
+# 22. Performance Rules
 
 Avoid unnecessary re-rendering during:
 
@@ -1244,7 +1603,7 @@ Use browser memory for active editor state.
 
 ---
 
-# 22. Testing Requirements
+# 23. Testing Requirements
 
 ## Unit Tests
 
@@ -1311,7 +1670,7 @@ Test:
 
 ---
 
-# 23. Development Order
+# 24. Development Order
 
 Follow this order unless the user explicitly changes priorities.
 
@@ -1406,7 +1765,7 @@ Follow this order unless the user explicitly changes priorities.
 
 ---
 
-# 24. Code Quality Rules
+# 25. Code Quality Rules
 
 ## TypeScript
 
@@ -1462,7 +1821,7 @@ Avoid AI-style comments that restate every line.
 
 ---
 
-# 25. Git Rules
+# 26. Git Rules
 
 Use clear commit messages:
 
@@ -1486,7 +1845,7 @@ Do not commit:
 
 ---
 
-# 26. Environment Variables
+# 27. Environment Variables
 
 Recommended variables:
 
@@ -1495,6 +1854,8 @@ NEXT_PUBLIC_APP_NAME=PrintChum
 NEXT_PUBLIC_APP_URL=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# WebMCP is enabled when unset; set to false, 0, or off to disable.
+NEXT_PUBLIC_WEBMCP_ENABLED=true
 
 SUPABASE_SERVICE_ROLE_KEY=
 
@@ -1518,7 +1879,7 @@ Do not access missing secrets silently.
 
 ---
 
-# 27. Decisions That Require Approval
+# 28. Decisions That Require Approval
 
 Do not implement these without explicit approval:
 
@@ -1540,7 +1901,7 @@ Do not implement these without explicit approval:
 
 ---
 
-# 28. Definition of Done
+# 29. Definition of Done
 
 A feature is done only when:
 
@@ -1559,7 +1920,7 @@ A feature is done only when:
 
 ---
 
-# 29. First Production Release Scope
+# 30. First Production Release Scope
 
 The first paid release of **PrintChum** should include:
 
@@ -1596,7 +1957,7 @@ Do not delay the release for:
 
 ---
 
-# 30. Working Agreement
+# 31. Working Agreement
 
 Before implementing any feature:
 

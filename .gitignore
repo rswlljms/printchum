@@ -8,6 +8,12 @@ test-results/
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+*.sqlite
+*.sqlite3
+*.db
 npm-debug.log*
 debug.log
 .agents

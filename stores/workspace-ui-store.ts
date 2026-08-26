@@ -7,7 +7,9 @@ export type WebMcpStatus =
   | "unsupported"
   | "disabled"
   | "registered"
-  | "blocked";
+  | "blocked"
+  | "partial"
+  | "failed";
 
 export type WebMcpActivityEntry = {
   name: string;
