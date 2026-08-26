@@ -89,6 +89,23 @@ function describeLayout(): Record<string, unknown> {
   };
 }
 
+function describePaper(
+  paper: ReturnType<typeof useEditorStore.getState>["paper"],
+): Record<string, unknown> {
+  return {
+    presetId: paper.presetId,
+    width: paper.width,
+    height: paper.height,
+    unit: paper.unit,
+    orientation: paper.orientation,
+    margin: paper.margin,
+    horizontalSpacing: paper.horizontalSpacing,
+    verticalSpacing: paper.verticalSpacing,
+    cuttingGuidesEnabled: paper.cuttingGuidesEnabled,
+    sizeLabelsEnabled: paper.sizeLabelsEnabled,
+  };
+}
+
 function requirePhotoSizeItem(
   itemId: string,
 ): { item: PhotoSizeItem } | { failure: EditorToolResult } {
@@ -115,22 +132,9 @@ export function getEditorSummaryHandler(input: unknown): EditorToolResult {
     ok: true,
     hasSourcePhoto: state.sourcePhotos.length > 0,
     photoCount: state.sourcePhotos.length,
-    paper: {
-      name: state.paper.name,
-      presetId: state.paper.presetId,
-      width: state.paper.width,
-      height: state.paper.height,
-      unit: state.paper.unit,
-      orientation: state.paper.orientation,
-      margin: state.paper.margin,
-      horizontalSpacing: state.paper.horizontalSpacing,
-      verticalSpacing: state.paper.verticalSpacing,
-      cuttingGuidesEnabled: state.paper.cuttingGuidesEnabled,
-      sizeLabelsEnabled: state.paper.sizeLabelsEnabled,
-    },
+    paper: describePaper(state.paper),
     photoSizes: state.photoSizes.map((item) => ({
       id: item.id,
-      name: item.name,
       width: item.width,
       height: item.height,
       unit: item.unit,
@@ -141,7 +145,6 @@ export function getEditorSummaryHandler(input: unknown): EditorToolResult {
     selectedServiceSet: selectedSnapshot
       ? {
           id: selectedSnapshot.serviceSetId,
-          name: selectedSnapshot.serviceSetName,
           modificationState: state.serviceSetModificationState,
         }
       : null,
@@ -166,8 +169,6 @@ export function listPaperPresetsHandler(input: unknown): EditorToolResult {
       .filter((preset) => preset.category !== "custom")
       .map((preset) => ({
         id: preset.id,
-        name: preset.name,
-        description: preset.description ?? null,
         width: preset.width,
         height: preset.height,
         unit: preset.unit,
@@ -175,7 +176,6 @@ export function listPaperPresetsHandler(input: unknown): EditorToolResult {
       })),
     customPresets: state.customPaperPresets.map((preset) => ({
       id: preset.id,
-      name: preset.name,
       width: preset.width,
       height: preset.height,
       unit: preset.unit,
@@ -195,8 +195,6 @@ export function listPhotoSizePresetsHandler(input: unknown): EditorToolResult {
       .filter((preset) => preset.category !== "custom")
       .map((preset) => ({
         id: preset.id,
-        name: preset.name,
-        description: preset.description ?? null,
         width: preset.width,
         height: preset.height,
         unit: preset.unit,
@@ -215,8 +213,6 @@ export function listServiceSetsHandler(input: unknown): EditorToolResult {
     ok: true,
     serviceSets: state.serviceSets.map((serviceSet) => ({
       id: serviceSet.id,
-      name: serviceSet.name,
-      description: serviceSet.description ?? null,
       price: serviceSet.price,
       currencyCode: serviceSet.currencyCode,
       status: serviceSet.status,
@@ -282,7 +278,7 @@ export function configurePaperHandler(input: unknown): EditorToolResult {
 
   const finalState = useEditorStore.getState();
   return resultWithLayout({
-    paper: finalState.paper,
+    paper: describePaper(finalState.paper),
     ...describeLayout(),
   });
 }
@@ -372,7 +368,6 @@ function summarizeItem(item: PhotoSizeItem): EditorToolResult {
   return resultWithLayout({
     item: {
       id: item.id,
-      name: item.name,
       width: item.width,
       height: item.height,
       unit: item.unit,
@@ -448,9 +443,7 @@ export function applyServiceSetHandler(input: unknown): EditorToolResult {
     (candidate) => candidate.id === args.serviceSetId,
   );
   if (!serviceSet) {
-    return toolError(
-      `No service set with id "${args.serviceSetId}".`,
-      {
+    return toolError("The requested service set was not found.", {
         availableServiceSetIds: state.serviceSets.map(
           (candidate) => candidate.id,
         ),
@@ -458,9 +451,7 @@ export function applyServiceSetHandler(input: unknown): EditorToolResult {
     );
   }
   if (serviceSet.status === "disabled") {
-    return toolError(
-      `The service set "${serviceSet.name}" is disabled and cannot be applied.`,
-    );
+    return toolError("The requested service set is disabled and cannot be applied.");
   }
   const applied = useEditorStore.getState().applyServiceSet(serviceSet.id);
   if (!applied) {
@@ -471,7 +462,6 @@ export function applyServiceSetHandler(input: unknown): EditorToolResult {
     ok: true,
     appliedServiceSet: {
       id: serviceSet.id,
-      name: serviceSet.name,
     },
     photoSizeCount: nextState.photoSizes.length,
     ...describeLayout(),
@@ -535,9 +525,6 @@ export function configureNameplateHandler(input: unknown): EditorToolResult {
     nameplate: nameplate
       ? {
           enabled: item?.nameplateEnabled ?? false,
-          primaryText: nameplate.primaryText,
-          secondaryText: nameplate.secondaryText ?? null,
-          thirdLineText: nameplate.thirdLineText ?? null,
           position: nameplate.position,
           fontSizePoints: nameplate.fontSizePoints,
         }
@@ -548,6 +535,7 @@ export function configureNameplateHandler(input: unknown): EditorToolResult {
 
 export async function exportPdfHandler(
   input: unknown,
+  options?: WebMCP.ToolExecuteCallbackOptions,
 ): Promise<EditorToolResult> {
   const parsed = parseSchema(exportPdfSchema, input);
   if (!parsed.success) {
@@ -577,7 +565,11 @@ export async function exportPdfHandler(
     return toolError("The layout is not ready to export.");
   }
   try {
-    const result = await pdfExportService.exportLayout(exportInput);
+    const signal = options?.signal;
+    const result = await pdfExportService.exportLayout(exportInput, { signal });
+    if (signal?.aborted) {
+      throw signal.reason;
+    }
     downloadPdfResult(result);
     return {
       ok: true,
@@ -732,13 +724,9 @@ export function saveServiceSetHandler(input: unknown): EditorToolResult {
   if (!serviceSetId) {
     return toolError("The service set could not be saved. Try again.");
   }
-  const created = useEditorStore
-    .getState()
-    .serviceSets.find((candidate) => candidate.id === serviceSetId);
   return {
     ok: true,
     serviceSetId,
-    name: created?.name ?? args.name,
     serviceSetCount: useEditorStore.getState().serviceSets.length,
   };
 }

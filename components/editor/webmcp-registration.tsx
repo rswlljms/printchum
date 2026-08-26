@@ -13,19 +13,12 @@ export function WebMcpRegistration() {
       if (controller.signal.aborted) {
         return;
       }
-      if (result.disabled) {
-        useWorkspaceUiStore.getState().setWebMcpStatus("disabled", 0);
-      } else if (result.blocked) {
-        useWorkspaceUiStore
-          .getState()
-          .setWebMcpStatus("blocked", result.registeredCount);
-      } else if (result.registeredCount > 0) {
-        useWorkspaceUiStore
-          .getState()
-          .setWebMcpStatus("registered", result.registeredCount);
-      } else {
-        useWorkspaceUiStore.getState().setWebMcpStatus("unsupported", 0);
+      if (result.status === "aborted") {
+        return;
       }
+      useWorkspaceUiStore
+        .getState()
+        .setWebMcpStatus(result.status, result.registeredCount);
     });
     return () => {
       controller.abort();

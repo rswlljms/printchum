@@ -4,12 +4,13 @@ import { createEditorToolRegistrations } from "@/features/editor/webmcp/tool-def
 import { editorToolCatalog } from "@/features/editor/webmcp/tool-catalog";
 
 describe("editor webmcp tool catalog", () => {
-  it("contains seventeen uniquely named kebab-case tools", () => {
+  it("contains seventeen uniquely named tools within the WebMCP naming contract", () => {
     expect(editorToolCatalog).toHaveLength(17);
     const names = editorToolCatalog.map((entry) => entry.name);
     expect(new Set(names).size).toBe(17);
     for (const name of names) {
-      expect(name).toMatch(/^[a-z0-9-]+$/);
+      expect(name).toMatch(/^[a-z0-9._-]+$/);
+      expect(name.length).toBeLessThanOrEqual(128);
     }
   });
 
@@ -88,10 +89,13 @@ describe("editor webmcp tool catalog", () => {
       expect(tool.title).toBe(entry.title);
       expect(tool.description).toBe(entry.description);
       if (entry.permission === "read") {
-        expect(tool.annotations).toEqual({ readOnlyHint: true });
+        expect(tool.annotations).toMatchObject({ readOnlyHint: true });
       } else {
-        expect(tool.annotations).toEqual({ readOnlyHint: false });
+        expect(tool.annotations).toMatchObject({ readOnlyHint: false });
       }
+      expect(tool.annotations?.untrustedContentHint).toBe(
+        entry.untrustedContentHint ?? false,
+      );
     }
   });
 });

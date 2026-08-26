@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  isWebMcpSupported,
   registerModelContextTools,
-  type ModelContextRegistrationResult,
 } from "@/lib/webmcp/model-context-bridge";
 
 function makeTool(name: string): WebMCP.ModelContextTool {
@@ -29,6 +29,20 @@ describe("registerModelContextTools abort handling", () => {
     vi.restoreAllMocks();
   });
 
+  it("requires a callable registerTool method", () => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("document", { modelContext: {} });
+
+    expect(isWebMcpSupported()).toBe(false);
+  });
+
+  it("is unsupported without browser globals", () => {
+    vi.stubGlobal("window", undefined);
+    vi.stubGlobal("document", undefined);
+
+    expect(isWebMcpSupported()).toBe(false);
+  });
+
   it("stops silently when cleanup aborts mid-registration", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     stubModelContext(
@@ -45,12 +59,15 @@ describe("registerModelContextTools abort handling", () => {
         }),
     );
     const controller = new AbortController();
-    const pending: Promise<ModelContextRegistrationResult> =
-      registerModelContextTools([makeTool("get-editor-summary")], controller.signal);
+    const pending = registerModelContextTools(
+      [makeTool("get-editor-summary")],
+      controller.signal,
+    );
     controller.abort();
     await expect(pending).resolves.toEqual({
+      status: "aborted",
       registeredCount: 0,
-      blocked: false,
+      totalCount: 1,
     });
     expect(warn).not.toHaveBeenCalled();
   });
@@ -64,7 +81,11 @@ describe("registerModelContextTools abort handling", () => {
       [makeTool("a"), makeTool("b")],
       controller.signal,
     );
-    expect(result).toEqual({ registeredCount: 0, blocked: false });
+    expect(result).toEqual({
+      status: "aborted",
+      registeredCount: 0,
+      totalCount: 2,
+    });
     expect(modelContext.registerTool).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
   });
@@ -83,11 +104,34 @@ describe("registerModelContextTools abort handling", () => {
       [makeTool("bad-tool"), makeTool("good-tool")],
       new AbortController().signal,
     );
-    expect(result).toEqual({ registeredCount: 1, blocked: false });
+    expect(result).toEqual({
+      status: "partial",
+      registeredCount: 1,
+      totalCount: 2,
+    });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
       'WebMCP: tool "bad-tool" could not be registered.',
       expect.any(TypeError),
     );
+  });
+
+  it("reports permissions-policy blocking with the actual count", async () => {
+    stubModelContext(async (tool) => {
+      if (tool.name === "blocked-tool") {
+        throw new DOMException("blocked", "NotAllowedError");
+      }
+    });
+
+    const result = await registerModelContextTools(
+      [makeTool("good-tool"), makeTool("blocked-tool")],
+      new AbortController().signal,
+    );
+
+    expect(result).toEqual({
+      status: "blocked",
+      registeredCount: 1,
+      totalCount: 2,
+    });
   });
 });

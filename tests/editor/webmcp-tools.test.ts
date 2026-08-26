@@ -67,9 +67,10 @@ describe("editor webmcp tool definitions", () => {
   it("marks read-only tools with annotations", () => {
     const tools = createEditorToolRegistrations();
     const summary = tools.find((tool) => tool.name === "get-editor-summary");
-    expect(summary?.annotations).toEqual({ readOnlyHint: true });
+    expect(summary?.annotations).toMatchObject({ readOnlyHint: true });
+    expect(summary?.annotations?.untrustedContentHint).toBe(true);
     const exportTool = tools.find((tool) => tool.name === "export-pdf");
-    expect(exportTool?.annotations).toEqual({ readOnlyHint: false });
+    expect(exportTool?.annotations).toMatchObject({ readOnlyHint: false });
   });
 });
 
@@ -89,7 +90,6 @@ describe("editor webmcp handlers", () => {
       expect(result.hasSourcePhoto).toBe(true);
       expect(result.photoCount).toBe(1);
       expect(result.paper).toMatchObject({
-        name: "Letter / Short Bond",
         unit: "in",
         orientation: "portrait",
       });
@@ -136,6 +136,7 @@ describe("editor webmcp handlers", () => {
       const serialized = JSON.stringify(result);
       expect(serialized).not.toContain("photoItems");
       expect(serialized).not.toContain("nameplate");
+      expect(serialized).not.toContain("School");
     });
   });
 
@@ -160,6 +161,7 @@ describe("editor webmcp handlers", () => {
       expect(paper.height).toBe(7);
       expect(paper.orientation).toBe("landscape");
       expect(paper.presetId).toBeNull();
+      expect(JSON.stringify(result)).not.toContain("Letter");
     });
 
     it("rejects unknown presets and lists valid ids", () => {
@@ -207,6 +209,7 @@ describe("editor webmcp handlers", () => {
         unit: "mm",
         quantity: 8,
       });
+      expect(JSON.stringify(result)).not.toContain("35 × 45");
     });
 
     it("bumps quantity when a preset already exists", () => {
@@ -309,6 +312,12 @@ describe("editor webmcp handlers", () => {
       expect(item?.nameplateEnabled).toBe(true);
       expect(item?.nameplate?.primaryText).toBe("Jamie Cruz");
       expect(item?.nameplate?.secondaryText).toBe("2026-0417");
+
+      const serializedResult = JSON.stringify(result);
+      expect(serializedResult).not.toContain("Jamie Cruz");
+      expect(serializedResult).not.toContain("2026-0417");
+      expect(serializedResult).not.toContain("primaryText");
+      expect(serializedResult).not.toContain("secondaryText");
     });
 
     it("rejects invalid color values at the schema boundary", () => {
@@ -573,5 +582,30 @@ describe("webmcp privacy guarantees", () => {
     expect(serialized).not.toContain("Jamie");
     expect(serialized).not.toContain("2026-0417");
     expect(serialized).not.toContain("primaryText");
+
+    const serializedResult = JSON.stringify(result);
+    expect(serializedResult).not.toContain("Jamie Cruz");
+    expect(serializedResult).not.toContain("2026-0417");
+    expect(serializedResult).not.toContain("primaryText");
+  });
+
+  it("stops a cancelled tool before it changes state or records activity", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const tool = createEditorToolRegistrations().find(
+      (candidate) => candidate.name === "add-photo-size",
+    );
+    if (!tool) {
+      throw new Error("add-photo-size registration missing");
+    }
+
+    await expect(
+      tool.execute(
+        { presetId: "2x2" },
+        { signal: controller.signal },
+      ),
+    ).rejects.toBeDefined();
+    expect(useEditorStore.getState().photoSizes).toHaveLength(0);
+    expect(useWorkspaceUiStore.getState().webMcpActivity).toHaveLength(0);
   });
 });

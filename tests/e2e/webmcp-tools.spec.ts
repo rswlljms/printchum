@@ -37,10 +37,11 @@ test.describe("editor WebMCP tools", () => {
     const supported = await page.evaluate(
       () => document.modelContext != null,
     );
-    test.skip(
-      !supported,
-      "document.modelContext is unavailable in this browser run; enable the WebMCP testing flag.",
-    );
+    if (!supported) {
+      throw new Error(
+        "document.modelContext is unavailable despite WEBMCP_E2E=1; use a WebMCP-enabled Chromium build.",
+      );
+    }
 
     // The header badge flips to "17 tools" only after the async registration
     // loop completes; wait on it before reading tools, otherwise this races
