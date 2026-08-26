@@ -18,6 +18,7 @@ import {
 import {
   editorToolCatalog,
   type EditorToolCatalogEntry,
+  type EditorToolPermission,
 } from "@/features/editor/webmcp/tool-catalog";
 import { useWorkspaceUiStore } from "@/stores/workspace-ui-store";
 
@@ -139,21 +140,44 @@ function ToolRow({ entry }: { entry: EditorToolCatalogEntry }) {
       >
         <CodeXml className="size-3.5" />
       </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <code className="font-technical text-xs text-[var(--ink)]">
-            {entry.name}
-          </code>
-          {entry.readOnly ? (
-            <Badge variant="secondary">Read only</Badge>
-          ) : null}
-        </div>
-        <p className="mt-0.5 truncate text-xs leading-5 text-[var(--gray-500)]">
+      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-0.5">
+        <code className="min-w-0 truncate font-technical text-xs text-[var(--ink)]">
+          {entry.name}
+        </code>
+        <Badge
+          variant="secondary"
+          className="justify-self-end whitespace-nowrap"
+        >
+          {entry.permission === "read" ? "Read only" : entry.permission}
+        </Badge>
+        <p className="col-span-2 min-w-0 truncate text-xs leading-5 text-[var(--gray-500)]">
           {entry.summary}
         </p>
       </div>
     </li>
   );
+}
+
+function groupPermissionLabel(
+  entries: readonly EditorToolCatalogEntry[],
+): string {
+  const labels: Record<EditorToolPermission, string> = {
+    read: "read only",
+    write: "write",
+    execute: "execute",
+  };
+  const permissions: EditorToolPermission[] = ["read", "write", "execute"];
+
+  return permissions
+    .map((permission) => ({
+      permission,
+      count: entries.filter((entry) => entry.permission === permission).length,
+    }))
+    .filter(({ count }) => count > 0)
+    .map(({ permission, count }) =>
+      count === entries.length ? labels[permission] : `${count} ${labels[permission]}`,
+    )
+    .join(" · ");
 }
 
 export function WebMcpDialogContent({ viewedAt }: { viewedAt: number }) {
@@ -164,9 +188,16 @@ export function WebMcpDialogContent({ viewedAt }: { viewedAt: number }) {
   const activity = useWorkspaceUiStore((state) => state.webMcpActivity);
 
   const statusInfo = statusCopy(status, registeredCount);
-  const readOnlyCount = editorToolCatalog.filter(
-    (entry) => entry.readOnly,
-  ).length;
+  const permissionCounts = editorToolCatalog.reduce(
+    (counts, entry) => {
+      counts[entry.permission] += 1;
+      return counts;
+    },
+    { read: 0, write: 0, execute: 0 } satisfies Record<
+      EditorToolPermission,
+      number
+    >,
+  );
 
   return (
     <DialogContent className="max-w-2xl space-y-5" aria-describedby={undefined}>
@@ -214,8 +245,9 @@ export function WebMcpDialogContent({ viewedAt }: { viewedAt: number }) {
       </section>
 
       <p className="text-xs leading-5 text-[var(--gray-500)]">
-        Tools change layout settings only. Your photo stays in this browser,
-        and agents never receive image data.
+        Tools can inspect or change layout settings and start visible output
+        actions. Your photo stays in this browser, and agents never receive
+        image data.
       </p>
 
       <section aria-label="WebMCP tools" className="space-y-2">
@@ -224,15 +256,16 @@ export function WebMcpDialogContent({ viewedAt }: { viewedAt: number }) {
             const entries = groupEntries(group.names);
             return (
               <AccordionItem key={group.id} value={group.id}>
-                <AccordionTrigger aria-label={`${group.title}, ${entries.length} tools`}>
-                  <span className="text-sm font-medium text-[var(--ink)]">
-                    {group.title}
-                  </span>
-                  <span className="micro-label uppercase">
-                    {entries.length} tools
-                    {entries.every((entry) => entry.readOnly)
-                      ? " · read only"
-                      : ""}
+                <AccordionTrigger
+                  aria-label={`${group.title}, ${entries.length} tools`}
+                >
+                  <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4">
+                    <span className="truncate text-sm font-medium text-[var(--ink)]">
+                      {group.title}
+                    </span>
+                    <span className="micro-label justify-self-end whitespace-nowrap uppercase">
+                      {entries.length} tools · {groupPermissionLabel(entries)}
+                    </span>
                   </span>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -247,7 +280,7 @@ export function WebMcpDialogContent({ viewedAt }: { viewedAt: number }) {
           })}
         </Accordion>
         <p className="micro-label px-1 uppercase">
-          {editorToolCatalog.length} tools · {readOnlyCount} read only
+          {editorToolCatalog.length} tools · {permissionCounts.read} read only · {permissionCounts.write} write · {permissionCounts.execute} execute
         </p>
       </section>
 

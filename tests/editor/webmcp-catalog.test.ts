@@ -13,14 +13,27 @@ describe("editor webmcp tool catalog", () => {
     }
   });
 
-  it("marks exactly the five read tools as read only", () => {
-    const readOnly = editorToolCatalog.filter((entry) => entry.readOnly);
+  it("classifies five read, ten write, and two execute tools", () => {
+    const readOnly = editorToolCatalog.filter(
+      (entry) => entry.permission === "read",
+    );
+    const write = editorToolCatalog.filter(
+      (entry) => entry.permission === "write",
+    );
+    const execute = editorToolCatalog.filter(
+      (entry) => entry.permission === "execute",
+    );
     expect(readOnly.map((entry) => entry.name)).toEqual([
       "get-editor-summary",
       "list-paper-presets",
       "list-photo-size-presets",
       "list-service-sets",
       "list-nameplate-presets",
+    ]);
+    expect(write).toHaveLength(10);
+    expect(execute.map((entry) => entry.name)).toEqual([
+      "export-pdf",
+      "open-print-dialog",
     ]);
   });
 
@@ -53,7 +66,7 @@ describe("editor webmcp tool catalog", () => {
 
   it("states the visible effect for every mutating tool", () => {
     for (const entry of editorToolCatalog) {
-      if (entry.readOnly) {
+      if (entry.permission === "read") {
         continue;
       }
       expect(
@@ -74,10 +87,10 @@ describe("editor webmcp tool catalog", () => {
       const entry = editorToolCatalog[index];
       expect(tool.title).toBe(entry.title);
       expect(tool.description).toBe(entry.description);
-      if (entry.readOnly) {
+      if (entry.permission === "read") {
         expect(tool.annotations).toEqual({ readOnlyHint: true });
       } else {
-        expect(tool.annotations).toBeUndefined();
+        expect(tool.annotations).toEqual({ readOnlyHint: false });
       }
     }
   });

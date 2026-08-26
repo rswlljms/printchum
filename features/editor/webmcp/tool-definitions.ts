@@ -180,7 +180,9 @@ export function createEditorToolRegistrations(): WebMCP.ModelContextTool[] {
       inputSchema: toInputSchema(binding.schema),
       execute: (inputObject: Record<string, unknown>) =>
         executeAndRecord(entry.name, binding.handler, inputObject),
-      ...(entry.readOnly ? { annotations: { readOnlyHint: true } } : {}),
+      // WebMCP exposes a binary read-only hint. PrintChum's finer write/execute
+      // distinction remains in the catalog; both are non-read-only to agents.
+      annotations: { readOnlyHint: entry.permission === "read" },
     };
   });
 }

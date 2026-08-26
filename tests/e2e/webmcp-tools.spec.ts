@@ -57,6 +57,22 @@ test.describe("editor WebMCP tools", () => {
     // getTools() returns tools sorted by name, not registration order.
     expect([...toolNames].sort()).toEqual([...expectedToolNames].sort());
 
+    const annotationCounts = await page.evaluate(async () => {
+      const tools = (await document.modelContext?.getTools()) ?? [];
+      return tools.reduce(
+        (counts, tool) => {
+          if (tool.annotations?.readOnlyHint === true) {
+            counts.readOnly += 1;
+          } else if (tool.annotations?.readOnlyHint === false) {
+            counts.write += 1;
+          }
+          return counts;
+        },
+        { readOnly: 0, write: 0 },
+      );
+    });
+    expect(annotationCounts).toEqual({ readOnly: 5, write: 12 });
+
     async function executeTool(
       name: string,
       args: Record<string, unknown>,

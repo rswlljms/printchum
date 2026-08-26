@@ -69,7 +69,7 @@ describe("editor webmcp tool definitions", () => {
     const summary = tools.find((tool) => tool.name === "get-editor-summary");
     expect(summary?.annotations).toEqual({ readOnlyHint: true });
     const exportTool = tools.find((tool) => tool.name === "export-pdf");
-    expect(exportTool?.annotations).toBeUndefined();
+    expect(exportTool?.annotations).toEqual({ readOnlyHint: false });
   });
 });
 

@@ -29,8 +29,13 @@ test.describe("WebMCP discovery surface", () => {
     await expect(dialog.getByText("Try asking")).toBeVisible();
     await expect(
       dialog.getByText(
-        "Tools change layout settings only. Your photo stays in this browser, and agents never receive image data.",
+        "Tools can inspect or change layout settings and start visible output actions. Your photo stays in this browser, and agents never receive image data.",
       ),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText("17 tools · 5 read only · 10 write · 2 execute", {
+        exact: true,
+      }),
     ).toBeVisible();
 
     const toolList = dialog.getByLabel("WebMCP tools");
@@ -46,6 +51,15 @@ test.describe("WebMCP discovery surface", () => {
     await expect(inspectGroup).toBeVisible();
     await expect(configureGroup).toBeVisible();
     await expect(outputGroup).toBeVisible();
+    await expect(
+      toolList.getByText("5 tools · read only", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      toolList.getByText("9 tools · write", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      toolList.getByText("3 tools · 1 write · 2 execute", { exact: true }),
+    ).toBeVisible();
 
     // Collapsed by default; expanding reveals compact tool rows.
     await inspectGroup.click();
@@ -63,6 +77,7 @@ test.describe("WebMCP discovery surface", () => {
     await expect(
       toolList.getByText("export-pdf", { exact: true }),
     ).toBeVisible();
+    await expect(toolList.getByText("Execute").first()).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
