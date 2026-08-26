@@ -10,6 +10,5 @@ test-results/
 !.env.example
 npm-debug.log*
 debug.log
-.claude
 .agents
 skills-lock.json

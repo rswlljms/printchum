@@ -475,6 +475,11 @@ export function LayoutCanvas(props: LayoutCanvasProps) {
                 ? "Edit the selected dimensions or choose a larger paper preset."
                 : "Add a standard or custom photo size to generate a layout."}
             </p>
+            {layoutResult && layoutResult.totalItems > 0 ? null : (
+              <p className="mt-1 text-xs text-[var(--gray-400)]">
+                Or ask your agent to arrange the layout for you.
+              </p>
+            )}
           </div>
         </div>
       )}

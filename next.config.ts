@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 // Baseline headers per the security-and-hardening skill. The CSP allows
@@ -5,12 +6,21 @@ import type { NextConfig } from "next";
 // hydration data); upgrade to a nonce-based CSP when auth routes land.
 // connect-src must gain the Supabase project origin when Supabase Auth
 // is wired up.
+const isDev = process.env.NODE_ENV === "development";
+
+const scriptSrc = ["'self'", "'unsafe-inline'"];
+if (isDev) {
+  // React's dev-mode devtools require eval(); production keeps the strict
+  // list. This relaxation never reaches production headers.
+  scriptSrc.push("'unsafe-eval'");
+}
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src ${scriptSrc.join(" ")}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
@@ -46,4 +56,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// The Sentry wrapper only activates once a DSN is configured so local and CI
+// builds stay byte-identical to an unwrapped build. With credentials present it
+// enables source-map upload; without SENTRY_AUTH_TOKEN the upload step is
+// skipped instead of failing the deploy.
+const sentryEnabled =
+  Boolean(process.env.SENTRY_DSN) || Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+    })
+  : nextConfig;

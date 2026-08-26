@@ -2,6 +2,7 @@
 
 import { KofiButton } from "@/components/workspace/kofi-button";
 import { ThemeToggle } from "@/components/workspace/theme-toggle";
+import { WebMcpBadge } from "@/components/workspace/webmcp-badge";
 
 export function AppHeader() {
   return (
@@ -15,6 +16,7 @@ export function AppHeader() {
         </p>
       </div>
       <div className="flex items-center gap-3 sm:gap-4">
+        <WebMcpBadge />
         <KofiButton />
         <ThemeToggle />
       </div>

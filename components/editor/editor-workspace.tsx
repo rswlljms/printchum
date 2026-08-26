@@ -12,18 +12,25 @@ import {
 } from "@/components/editor/print-options-dialog";
 import { SummaryPanel } from "@/components/editor/summary-panel";
 import { UnplacedItemsWarning } from "@/components/editor/unplaced-items-warning";
+import { WebMcpRegistration } from "@/components/editor/webmcp-registration";
 import { PrintPreview } from "@/components/print/print-preview";
 import { Card, CardContent } from "@/components/ui/card";
 import { orientPaper } from "@/lib/layout-engine/paper-sizes";
 import { toInches } from "@/lib/layout-engine/units";
 import { formatPhotoSizeLabel } from "@/features/editor/photo-sizes/conversions";
 import { useEditorStore } from "@/stores/editor-store";
+import { useWorkspaceUiStore } from "@/stores/workspace-ui-store";
 
 export function EditorWorkspace() {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
-  const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printConfiguration, setPrintConfiguration] =
     useState<PrintPreviewConfiguration | null>(null);
+  const printDialogOpen = useWorkspaceUiStore(
+    (state) => state.printDialogOpen,
+  );
+  const setPrintDialogOpen = useWorkspaceUiStore(
+    (state) => state.setPrintDialogOpen,
+  );
   const paper = useEditorStore((state) => state.paper);
   const layoutResult = useEditorStore((state) => state.layoutResult);
   const activePageIndex = useEditorStore((state) => state.activePageIndex);
@@ -115,6 +122,7 @@ export function EditorWorkspace() {
     <div
       className="page-enter mx-auto max-w-[1800px] p-4 sm:p-6"
     >
+      <WebMcpRegistration />
       <div className="mb-8 border-b border-[var(--gray-200)] pb-6">
         <div>
           <p className="micro-label">Editor</p>

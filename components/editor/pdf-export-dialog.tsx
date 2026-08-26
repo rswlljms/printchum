@@ -23,11 +23,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
+import { createPdfExportInputFromEditorState } from "@/lib/pdf/export-input";
 import { downloadPdfResult } from "@/lib/pdf/download";
 import { PdfExportError } from "@/lib/pdf/errors";
 import {
   createDefaultPdfFilename,
-  sanitizePdfFilename,
 } from "@/lib/pdf/filename";
 import { pdfExportService } from "@/lib/pdf/export-pdf";
 import type {
@@ -80,48 +80,12 @@ export function PdfExportDialog({
   );
 
   const input = useMemo<PdfExportInput | null>(() => {
-    if (!state.layoutResult) {
-      return null;
-    }
-    return {
-      layoutResult: state.layoutResult,
-      paper: state.paper,
-      photoSizes: state.photoSizes,
-      crop: state.crop,
-      cropMode: state.cropMode,
-      backgroundMode: state.backgroundMode,
-      backgroundColor: state.backgroundColor,
-      backgroundRemoved: state.backgroundRemoved,
-      imageSource:
-        state.sourceFile && state.sourceObjectUrl
-          ? {
-              file: state.sourceFile,
-              objectUrl: state.sourceObjectUrl,
-              mimeType: state.sourceFile.type as
-                | "image/jpeg"
-                | "image/png"
-                | "image/webp",
-            }
-          : null,
-      imageSources: state.sourcePhotos.map((photo) => ({
-        id: photo.id,
-        file: photo.file,
-        objectUrl: photo.objectUrl,
-        mimeType: photo.file.type as
-          | "image/jpeg"
-          | "image/png"
-          | "image/webp",
-        crop: photo.crop,
-        cropMode: photo.cropMode,
-      })),
-      options: {
-        ...toggles,
-        outputQuality: quality,
-        jpegQuality: quality === "high" ? 0.95 : 0.82,
-        filename: sanitizePdfFilename(filename),
-        pageIndexes: selected.pageIndexes,
-      },
-    };
+    return createPdfExportInputFromEditorState(state, {
+      quality,
+      filename,
+      toggles,
+      pageIndexes: selected.pageIndexes,
+    });
   }, [filename, quality, selected.pageIndexes, state, toggles]);
 
   const validation = useMemo(() => {

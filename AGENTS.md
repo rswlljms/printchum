@@ -6,7 +6,7 @@
 - **Brand capitalization:** `PrintChum`
 - **Primary domain:** `printchum.com` when available and registered
 - **Product category:** Privacy-first photo layout and printing SaaS
-- **Primary tagline:** Upload once. Print every size.
+- **Primary tagline:** Your companion for print-ready photos.
 
 Use **PrintChum** consistently in user-facing copy, metadata, documentation, emails, billing descriptions, and product labels. Do not use temporary names such as `photo-print-saas`, `EZPrint`, `PrintQuick`, or `Printoria` in user-facing content.
 

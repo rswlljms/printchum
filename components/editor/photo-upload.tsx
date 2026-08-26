@@ -207,6 +207,10 @@ export function PhotoUpload() {
           <p className="mt-1 text-xs text-[var(--gray-500)]">
             JPEG, PNG, or WebP · up to 15 MB
           </p>
+          <p className="mt-1 text-xs text-[var(--gray-500)]">
+            Photos stay on this device. Ask your agent to set up sizes and
+            paper while you crop.
+          </p>
           <Button type="button" variant="outline" size="sm" className="mt-3" onClick={openFilePicker}>
             Choose photo
           </Button>
