@@ -4,11 +4,14 @@
 // WebMCP explainer (https://github.com/webmachinelearning/webmcp) and shipped
 // by Chrome's origin trial. Merge it into the global namespace until the
 // package catches up.
+//
+// Chrome expects the input as a JSON string and resolves with a JSON string of
+// the tool's return value (see the Imperative API docs:
+// executeTool(tool, '{"text": "Buy milk"}')). Passing an object input fails
+// with "UnknownError: Failed to parse input arguments".
 declare namespace WebMCP {
   interface ModelContext {
-    executeTool(
-      tool: RegisteredTool,
-      inputObject?: Record<string, unknown>,
-    ): Promise<unknown>;
+    executeTool(tool: RegisteredTool, inputJson?: string): Promise<unknown>;
   }
 }
+

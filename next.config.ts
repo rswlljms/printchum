@@ -36,7 +36,11 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
+    // tools=(self) explicitly allows WebMCP agent tool registration on this
+    // origin. The spec default is already 'self' for top-level pages, but
+    // stating it here pins that behavior against future default changes and
+    // documents intent. camera/mic/geolocation stay fully denied.
+    value: "camera=(), microphone=(), geolocation=(), tools=(self)",
   },
   {
     key: "Strict-Transport-Security",

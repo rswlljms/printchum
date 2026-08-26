@@ -42,17 +42,20 @@ test.describe("editor WebMCP tools", () => {
       "document.modelContext is unavailable in this browser run; enable the WebMCP testing flag.",
     );
 
+    // The header badge flips to "17 tools" only after the async registration
+    // loop completes; wait on it before reading tools, otherwise this races
+    // the registration and sees an empty tool list.
+    await expect(
+      page.getByRole("button", { name: "View WebMCP agent tools" }),
+    ).toHaveText(/WebMCP · 17 tools/);
+
     const toolNames = await page.evaluate(async () => {
       const tools = (await document.modelContext?.getTools()) ?? [];
       return tools.map((tool) => tool.name);
     });
     expect(toolNames).toHaveLength(17);
-    expect(toolNames).toEqual(expectedToolNames);
-
-    // The header badge reflects live registration state.
-    await expect(
-      page.getByRole("button", { name: "View WebMCP agent tools" }),
-    ).toHaveText(/WebMCP · 17 tools/);
+    // getTools() returns tools sorted by name, not registration order.
+    expect([...toolNames].sort()).toEqual([...expectedToolNames].sort());
 
     async function executeTool(
       name: string,
@@ -65,7 +68,13 @@ test.describe("editor WebMCP tools", () => {
           if (!tool) {
             throw new Error(`tool not found: ${toolName}`);
           }
-          return document.modelContext?.executeTool(tool, toolArgs);
+          // Chrome hands executeTool a JSON string input and resolves with a
+          // JSON string of the tool's return value; parse it for assertions.
+          const raw = await document.modelContext?.executeTool(
+            tool,
+            JSON.stringify(toolArgs),
+          );
+          return typeof raw === "string" ? JSON.parse(raw) : raw;
         },
         { toolName: name, toolArgs: args },
       );
@@ -117,7 +126,8 @@ test.describe("editor WebMCP tools", () => {
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.pdf$/);
 
-    // Executed tools appear in the human-facing activity log.
+    // Executed tools appear in the human-facing activity log. Assert the first
+    // and last tools this test actually executed.
     await page
       .getByRole("button", { name: "View WebMCP agent tools" })
       .click();
@@ -125,7 +135,7 @@ test.describe("editor WebMCP tools", () => {
     await expect(discoveryDialog).toBeVisible();
     const activityLog = discoveryDialog.getByLabel("Recent agent activity");
     await expect(
-      activityLog.getByText("set-background", { exact: true }),
+      activityLog.getByText("configure-paper", { exact: true }),
     ).toBeVisible();
     await expect(
       activityLog.getByText("export-pdf", { exact: true }),
