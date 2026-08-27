@@ -14,6 +14,13 @@ test("shows the workspace at the canonical root URL", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "PrintChum Workspace" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create Layout" }).first()).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toHaveCount(0);
+  await expect(page.getByText("Developed by Roswell James Vitaliz")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "View PrintChum source on GitHub, opens in a new tab" }),
+  ).toHaveAttribute("href", "https://github.com/rswlljms/printchum");
+  await expect(
+    page.getByRole("link", { name: "Support PrintChum on Ko-fi, opens in a new tab" }),
+  ).toHaveAttribute("href", "https://ko-fi.com/printchum");
 
   await page.getByRole("button", { name: "Use dark theme" }).click();
   await expect(page.locator("html")).toHaveClass(/dark/);

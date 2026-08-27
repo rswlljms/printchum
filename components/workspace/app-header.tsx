@@ -1,6 +1,5 @@
 "use client";
 
-import { KofiButton } from "@/components/workspace/kofi-button";
 import { ThemeToggle } from "@/components/workspace/theme-toggle";
 import { WebMcpBadge } from "@/components/workspace/webmcp-badge";
 
@@ -11,13 +10,9 @@ export function AppHeader() {
         <h1 className="font-display text-lg uppercase text-[var(--ink)]">
           PrintChum Workspace
         </h1>
-        <p className="micro-label mt-0.5 hidden whitespace-nowrap sm:block">
-          Developed by Roswell James Vitaliz
-        </p>
       </div>
       <div className="flex items-center gap-3 sm:gap-4">
         <WebMcpBadge />
-        <KofiButton />
         <ThemeToggle />
       </div>
     </header>
