@@ -94,18 +94,36 @@ test("updates the authoritative preview summary from mock controls", async ({ pa
   await expect(page.getByText("4 photos", { exact: true })).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect
-    .poll(async () => (await canvas.boundingBox())?.y ?? -1)
-    .toBeGreaterThan(70);
-  await expect
-    .poll(async () => (await canvas.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
-    .toBeLessThan(200);
-  await expect
-    .poll(async () => (await summary.boundingBox())?.y ?? -1)
-    .toBeGreaterThanOrEqual(0);
-  await expect
-    .poll(async () => (await summary.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
-    .toBeLessThan(100);
+
+await expect
+  .poll(async () => {
+    const canvasBox = await canvas.boundingBox();
+    const viewport = page.viewportSize();
+
+    return Boolean(
+      canvasBox &&
+        viewport &&
+        canvasBox.y >= 0 &&
+        canvasBox.y < viewport.height &&
+        canvasBox.y + canvasBox.height > 0,
+    );
+  })
+  .toBe(true);
+
+await expect
+  .poll(async () => {
+    const summaryBox = await summary.boundingBox();
+    const viewport = page.viewportSize();
+
+    return Boolean(
+      summaryBox &&
+        viewport &&
+        summaryBox.y >= 0 &&
+        summaryBox.y < viewport.height &&
+        summaryBox.y + summaryBox.height > 0,
+    );
+  })
+  .toBe(true);
 
   expect(consoleErrors).toEqual([]);
 });

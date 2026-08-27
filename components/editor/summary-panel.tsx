@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatServiceSetPrice } from "@/features/editor/service-set-presentation";
+import { formatPhotoSizeLabel } from "@/features/editor/photo-sizes/conversions";
 import {
   fromInches,
   roundMeasurementForDisplay,
@@ -20,6 +21,9 @@ export function SummaryPanel() {
   );
   const selectedSizeCount = useEditorStore((state) => state.photoSizes.length);
   const photoSizes = useEditorStore((state) => state.photoSizes);
+  const sourcePhotoCount = useEditorStore(
+    (state) => state.sourcePhotos.length,
+  );
   const backgroundMode = useEditorStore((state) => state.backgroundMode);
   const selectedServiceSet = serviceSets.find((set) => set.id === selectedServiceSetId);
   const printableArea = calculatePrintableArea(paper);
@@ -39,9 +43,19 @@ export function SummaryPanel() {
 
   const summaryRows = [
     ["Paper", paper.name],
-    ["Size", `${paperWidth} × ${paperHeight} ${paper.unit}`],
+    ["Paper Size", `${paperWidth} × ${paperHeight} ${paper.unit}`],
     ["Orientation", paper.orientation],
     ["Printable area", `${printableWidth} × ${printableHeight} ${paper.unit}`],
+    [
+      "Photo Size",
+      photoSizes.length > 0
+        ? photoSizes
+            .map((size) =>
+              formatPhotoSizeLabel(size.name, size.width, size.height, size.unit),
+            )
+            .join(", ")
+        : "None",
+    ],
     ["Selected sizes", String(selectedSizeCount)],
     [
       "Background",
@@ -63,7 +77,14 @@ export function SummaryPanel() {
     ["Unplaced", String(layoutResult?.unplacedItems.length ?? 0)],
     [
       "Export status",
-      layoutResult && layoutResult.placedItems > 0 ? "Ready" : "Needs layout",
+      // Must match outputReady in editor-workspace.tsx: exports need a layout
+      // with placed items AND an in-memory source photo. Session restores keep
+      // photo sizes but clear photos, so "Ready" would otherwise be a lie.
+      !layoutResult || layoutResult.placedItems === 0
+        ? "Needs layout"
+        : sourcePhotoCount === 0
+          ? "Needs photo"
+          : "Ready",
     ],
     [
       "Export details",
