@@ -48,6 +48,15 @@ const securityHeaders = [
   },
 ];
 
+// WebMCP origin-trial token 
+const webmcpOriginTrialToken = process.env.WEBMCP_ORIGIN_TRIAL_TOKEN;
+if (webmcpOriginTrialToken && process.env.NODE_ENV === "production") {
+  securityHeaders.push({
+    key: "Origin-Trial",
+    value: webmcpOriginTrialToken,
+  });
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   async headers() {
