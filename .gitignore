@@ -18,3 +18,15 @@ npm-debug.log*
 debug.log
 .agents
 skills-lock.json
+
+# miscellaneous
+/remotion/
+/remotion.config.ts
+/scripts/check-voiceover-fit.mjs
+/scripts/fix-indent.mjs
+/scripts/generate-voiceover.mjs
+/scripts/synthesize-voiceover.mjs
+/scripts/test-voices.ps1
+/public/audio/
+/public/printchum.mp4
+/public/printchum_logo.svg
