@@ -58,7 +58,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-easy-crop": "^6.2.3",
-    "react-hook-form": "^7.83.0",
+    "react-hook-form": "^7.86.0",
     "remotion": "^4.0.518",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3",
