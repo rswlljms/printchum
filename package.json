@@ -65,18 +65,18 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
-    "@remotion/cli": "^4.0.518",
+    "@playwright/test": "^1.64.1",
+    "@remotion/cli": "^4.0.536",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "^16.2.12",
-    "msedge-tts": "^2.0.7",
+    "eslint": "^10.13.0",
+    "eslint-config-next": "^16.4.2",
+    "msedge-tts": "^2.1.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10",
-    "webmcp-types": "^0.1.5"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5",
+    "webmcp-types": "^0.1.10"
   }
 }
