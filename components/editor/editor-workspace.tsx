@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { ConfigurationPanel } from "@/components/editor/configuration-panel";
 import { LayoutCanvas } from "@/components/editor/layout-canvas";
@@ -48,26 +48,6 @@ export function EditorWorkspace() {
   const setActivePage = useEditorStore((state) => state.setActivePage);
   const setPreviewScale = useEditorStore((state) => state.setPreviewScale);
   const resetEditor = useEditorStore((state) => state.resetEditor);
-  const disposeSourcePhoto = useEditorStore((state) => state.disposeSourcePhoto);
-  const restoreWorkspaceSession = useEditorStore(
-    (state) => state.restoreWorkspaceSession,
-  );
-
-  useEffect(() => {
-    restoreWorkspaceSession();
-  }, [restoreWorkspaceSession]);
-
-  useEffect(() => {
-    function handleBeforeUnload(): void {
-      disposeSourcePhoto();
-    }
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      disposeSourcePhoto();
-    };
-  }, [disposeSourcePhoto]);
 
   const orientedPaper = orientPaper(
     toInches(paper.width, paper.unit),

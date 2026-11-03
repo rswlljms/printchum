@@ -5,7 +5,7 @@
 - **Product name:** PrintChum
 - **Brand capitalization:** `PrintChum`
 - **Primary domain:** `printchum.com` when available and registered
-- **Product category:** Privacy-first photo layout and printing SaaS
+- **Product category:** Privacy-first photo layout and document printing SaaS
 - **Primary tagline:** Your companion for print-ready photos.
 
 Use **PrintChum** consistently in user-facing copy, metadata, documentation, emails, billing descriptions, and product labels. Do not use temporary names such as `photo-print-saas`, `EZPrint`, `PrintQuick`, or `Printoria` in user-facing content.
@@ -14,9 +14,9 @@ Internal package names, environment variables, and technical identifiers may use
 
 ## Project Overview
 
-PrintChum is a privacy-first SaaS web application for creating print-ready ID photo layouts.
+PrintChum is a privacy-first SaaS web application for creating print-ready ID photo layouts and printing existing documents at exact paper sizes.
 
-Users can upload a photo once, crop and position it, generate multiple photo sizes, arrange them on standard or custom paper, apply optional nameplates, remove or replace backgrounds, and either download a PDF or print directly.
+Users can upload a photo once, crop and position it, generate multiple photo sizes, arrange them on standard or custom paper, apply optional nameplates, remove or replace backgrounds, and either download a PDF or print directly. Users can also switch to a Documents mode to print an existing PDF or image file on chosen paper, with the same local-only privacy guarantee.
 
 PrintChum is intended for:
 
@@ -59,6 +59,9 @@ Do not create database columns such as:
 - `processed_photo_url`
 - `customer_photo_path`
 - `pdf_export_url`
+- `original_document_url`
+- `document_file_path`
+- `composed_document_url`
 
 Saved projects may store layout configuration, but not customer images.
 
@@ -74,6 +77,7 @@ Perform these operations in the browser:
 - Layout generation
 - Page preview
 - Nameplate rendering
+- Document import, placement, and composition
 - PDF generation
 - Print rendering
 
@@ -127,6 +131,23 @@ Do not introduce:
 - A separate desktop application
 
 unless the current system has a verified requirement for them.
+
+## 1.6 Document Printing Boundary
+
+Document printing extends the workspace without weakening the photo-layout
+model. It is a separate mode with its own state, preview, and output path.
+
+- Documents are files the user already has. Do not build a document authoring
+  suite, word processor, or PDF editor without explicit approval.
+- Document bytes stay in browser memory. Never persist, upload, log, or send
+  them to analytics.
+- Compose the output PDF at the exact selected paper size, and preview the same
+  composed bytes that the user prints or downloads.
+- Fill and crop placement must clip the source page. Never stretch it or
+  silently change its aspect ratio.
+- Do not route documents through `calculateLayout()`, the photo editor store,
+  or the photo PDF pipeline. Shared units, paper presets, and the human-gated
+  print confirmation are the only intended reuse.
 
 ---
 
@@ -238,6 +259,7 @@ printchum/
 │   │   ├── layout.tsx
 │   │   ├── dashboard/
 │   │   ├── editor/
+│   │   ├── documents/
 │   │   ├── projects/
 │   │   ├── service-sets/
 │   │   ├── billing/
@@ -254,12 +276,14 @@ printchum/
 │   ├── marketing/
 │   ├── dashboard/
 │   ├── editor/
+│   ├── documents/
 │   └── ui/
 │
 ├── features/
 │   ├── auth/
 │   ├── billing/
 │   ├── editor/
+│   ├── documents/
 │   ├── projects/
 │   ├── service-sets/
 │
@@ -268,6 +292,7 @@ printchum/
 │   ├── billing/
 │   ├── entitlements/
 │   ├── layout-engine/
+│   ├── documents/
 │   ├── webmcp/
 │   ├── pdf/
 │   ├── printing/
@@ -276,11 +301,14 @@ printchum/
 │   └── permissions/
 │
 ├── stores/
+│   ├── document-store.ts
 │   └── editor-store.ts
 │
 ├── types/
 ├── tests/
 │   ├── editor/webmcp-*.test.ts
+│   ├── documents/*.test.ts
+│   ├── e2e/documents-*.spec.ts
 │   └── e2e/webmcp-*.spec.ts
 ├── supabase/
 │   ├── migrations/
@@ -327,6 +355,7 @@ All marketing content must present the product as **PrintChum**.
 ```text
 /dashboard
 /editor
+/documents
 /projects
 /service-sets
 /billing
@@ -448,6 +477,33 @@ Support:
 - Text color
 - Border
 
+## 5.6 Document Printing
+
+Support printing existing files in a separate Documents mode.
+
+Supported inputs:
+
+- PDF documents that are not encrypted or password-protected
+- JPEG, PNG, and WebP images
+- Source pages of mixed dimensions and orientation
+
+Supported output controls:
+
+- Standard and custom paper sizes
+- Portrait and landscape orientation
+- Margins
+- Fit (contain), Fill (cover with clipping), and Actual size (100%)
+- Page selection
+- PDF download
+- Direct print through the human-gated dialog
+
+The mode must validate MIME type, file size, and page count before reading
+content. It must reject unsupported or encrypted files with a clear message.
+
+Do not include document authoring, text editing, form filling, annotations,
+signatures, OCR, or batch processing in the first version. Those require
+explicit approval because they expand the product into a document editor.
+
 ---
 
 # 6. Privacy and Data Handling Rules
@@ -538,6 +594,7 @@ Do not store customer names unless a later approved feature explicitly requires 
 Never send these to analytics:
 
 - Customer photos
+- Document contents, page images, or file names
 - Customer names
 - File names
 - Signed URLs
@@ -557,6 +614,21 @@ analytics, server logs, persistent browser storage, or tool activity history.
 
 The human-facing WebMCP activity list may contain only the tool name, outcome,
 and timestamp. It must not retain arguments or results.
+
+## 6.6 Document Files
+
+Document files are as sensitive as customer photos, and often more so.
+
+- Keep document bytes in memory only: `File`, `Blob`, `ArrayBuffer`, or an
+  object URL.
+- Never upload, store, log, or analyze document content, file names, page
+  images, or extracted text.
+- Revoke object URLs when a document is replaced, cleared, or the workspace
+  unmounts.
+- Do not persist the composed PDF or restore a document after refresh.
+- Reject encrypted files instead of attempting decryption or prompting for a
+  password.
+- Do not include document identifiers in analytics or error reports.
 
 ---
 
@@ -869,6 +941,9 @@ The tool contract must preserve these invariants:
   sends image bytes to an agent. Background removal remains an explicit direct
   user action through the existing server route and its entitlement/credit
   checks.
+- Document mode is outside the WebMCP v1 contract. Do not register document
+  tools until the catalog, privacy rules, schemas, and tests are updated
+  together, and never expose document bytes or page text to an agent.
 
 ## 8.5 Registration Lifecycle
 
@@ -1130,6 +1205,21 @@ Do not:
 - Depend on display DPI
 - Assume one PDF DPI value applies to the page itself
 
+## 11.1 Document Composition
+
+Document output uses a separate composition path from the photo layout:
+
+- Load imports with `PDFDocument.load()` and reject encrypted or malformed
+  files before composition.
+- Compose onto pages at the exact selected paper size using `embedPage()` and
+  `drawPage()`. Preserve vector content; do not rasterize source pages as the
+  primary path.
+- Implement Fit as contain, Fill as cover, and Actual size as 100%. Clip
+  overflow with PDF clip operators (`clip()` and `endPath()`); never stretch.
+- Keep the source page aspect ratio and center it inside the printable area.
+- Preview the exact composed bytes that Download and Print use.
+- Enforce page-count and byte limits before decoding content.
+
 ---
 
 # 12. Direct Printing Rules
@@ -1155,6 +1245,10 @@ Show print instructions:
 - Scale must be 100% or Actual Size
 - Margins must be None
 - Browser headers and footers must be Off
+
+Documents use the same human-gated flow: compose the PDF, preview it, and let
+the user confirm through the system print dialog. Do not add a separate silent
+print path for documents.
 
 Silent or one-click printer-agent support is a later feature.
 
@@ -1416,6 +1510,9 @@ Validate:
 - Margins
 - Spacing
 - Paper dimensions
+- Document page count
+- Document encryption status
+- Document fit mode
 - Nameplate text lengths
 - Plan IDs
 - Price IDs
@@ -1483,11 +1580,12 @@ Allow only approved formats:
 - JPEG
 - PNG
 - WebP
+- PDF for the Documents mode, unencrypted only
 - HEIC only if the selected processing path supports it
 
 Set explicit file-size limits.
 
-Reject malformed files.
+Reject malformed files and validate document page counts before composition.
 
 ## Rate Limiting
 
@@ -1506,6 +1604,7 @@ Do not log:
 
 - Image data
 - Base64 image strings
+- Document contents, page images, or extracted text
 - Uploaded file names unless sanitized
 - Customer nameplate contents
 - Signed URLs
@@ -1619,6 +1718,9 @@ Use Vitest for:
 - Rotation
 - Utilization percentage
 - Nameplate dimensions
+- Document fit modes (contain, cover, actual)
+- Document composition page size and page count
+- Document validation limits and rejection paths
 - Subscription entitlements
 - Credit deduction
 - Credit reset logic
@@ -1639,6 +1741,15 @@ Register
 ```
 
 Also test:
+
+```text
+Switch to Documents
+→ Upload a PDF or image
+→ Choose paper and fit mode
+→ Preview composed pages
+→ Download PDF
+→ Confirm the print dialog
+```
 
 ```text
 Subscribe
@@ -1663,6 +1774,13 @@ Test:
 - Multiple overflow pages
 - Nameplate larger than photo
 - Unsupported paper dimensions
+- Encrypted PDF
+- Corrupt PDF
+- Multi-page PDF with mixed page sizes
+- Document page larger than the printable area
+- Oversized document byte size
+- Document page-count limit
+- Image-only document
 - Background-removal timeout
 - Duplicate webhook
 - Payment failure
@@ -1713,6 +1831,15 @@ Follow this order unless the user explicitly changes priorities.
 - Direct print
 - Print instructions
 - Nameplates
+
+## Phase 4A: Document Printing
+
+- `/documents` route and workspace mode switcher
+- Local PDF and image import with validation
+- Paper presets and fit/fill/actual placement
+- Composed-PDF preview
+- Download and human-confirmed print
+- Document-mode tests
 
 ## Phase 5: Presets
 
@@ -1914,7 +2041,7 @@ A feature is done only when:
 - It is tested at the appropriate level
 - It does not duplicate domain logic
 - It does not expose secrets
-- It does not store customer photos
+- It does not store customer photos or documents
 - It is usable on the target desktop layout
 - It does not break print or PDF accuracy
 
@@ -1942,7 +2069,8 @@ The first paid release of **PrintChum** should include:
 - Accurate Canvas preview
 - Multi-page PDF export
 - Direct print
-- No permanent customer-photo storage
+- Document printing for existing PDF and image files
+- No permanent customer-photo or document storage
 
 Do not delay the release for:
 
@@ -1952,6 +2080,8 @@ Do not delay the release for:
 - Customer CRM
 - Complex analytics
 - Silent printing
+- Document authoring or templates
+- Batch document printing
 - Mobile application
 - Desktop application
 
@@ -1963,7 +2093,7 @@ Before implementing any feature:
 
 1. Identify the domain module.
 2. Confirm whether it belongs in the browser or server.
-3. Confirm whether it processes customer photos.
+3. Confirm whether it processes customer photos or documents.
 4. Confirm whether it creates a provider cost.
 5. Confirm whether it requires entitlement checks.
 6. Confirm the physical measurement rules.
@@ -1976,3 +2106,13 @@ When `AGENTS.md` and `SKILL.md` overlap:
 - `SKILL.md` defines reusable implementation practices and specialized workflows.
 - A direct user instruction overrides both.
 - Security, privacy, billing, and data-integrity rules must not be weakened without explicit approval.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

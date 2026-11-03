@@ -130,6 +130,13 @@ function PhotoCropperSession({
   const setCropMode = useEditorStore((state) => state.setCropMode);
   const resetCrop = useEditorStore((state) => state.resetCrop);
   const [cropPosition, setCropPosition] = useState<Point>({ x: 0, y: 0 });
+  // Restore the saved framing when returning from another workspace mode.
+  const [initialCroppedAreaPercentages] = useState<Area>(() => ({
+    x: crop.xPercent,
+    y: crop.yPercent,
+    width: crop.widthPercent,
+    height: crop.heightPercent,
+  }));
 
   const aspect = targetSize && targetSize.height > 0
     ? targetSize.width / targetSize.height
@@ -158,6 +165,7 @@ function PhotoCropperSession({
         <Cropper
           image={sourceObjectUrl}
           crop={cropPosition}
+          initialCroppedAreaPercentages={initialCroppedAreaPercentages}
           zoom={crop.zoom}
           rotation={crop.rotation}
           aspect={aspect}

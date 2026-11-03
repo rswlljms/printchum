@@ -19,6 +19,10 @@ debug.log
 .agents
 skills-lock.json
 
+# Internal planning notes (ADRs and product ideas) stay local.
+/docs/ideas/
+/docs/decisions/
+
 # miscellaneous
 /remotion/
 /remotion.config.ts
