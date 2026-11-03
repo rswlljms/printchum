@@ -1,10 +1,12 @@
 import { AppHeader } from "@/components/workspace/app-header";
 import { WorkspaceFooter } from "@/components/workspace/workspace-footer";
+import { WorkspacePhotoSession } from "@/components/workspace/workspace-photo-session";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <TooltipProvider delayDuration={300}>
+      <WorkspacePhotoSession />
       <div className="flex min-h-screen flex-col bg-[var(--background)]">
         <AppHeader />
         <main

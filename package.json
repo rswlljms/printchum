@@ -48,12 +48,12 @@
     "@remotion/shapes": "^4.0.518",
     "@remotion/tailwind": "^4.0.518",
     "@remotion/transitions": "^4.0.518",
-    "@sentry/nextjs": "^10.71.0",
+    "@sentry/nextjs": "^10.78.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "geist": "^1.7.2",
     "lucide-react": "^1.27.0",
-    "next": "^16.2.12",
+    "next": "^16.4.4",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -61,7 +61,7 @@
     "react-hook-form": "^7.83.0",
     "remotion": "^4.0.518",
     "tailwind-merge": "^3.6.0",
-    "zod": "^4.4.3",
+    "zod": "^4.6.7",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -72,11 +72,11 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.2.12",
+    "eslint-config-next": "^16.4.4",
     "msedge-tts": "^2.0.7",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10",
+    "vitest": "^4.1.12",
     "webmcp-types": "^0.1.5"
   }
 }

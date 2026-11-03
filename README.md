@@ -32,6 +32,10 @@ not uploaded or permanently stored by the current application.
 - Multi-page PDF download and browser print flow
 - Light, dark, and system themes
 
+The header also links to `/documents`, which currently shows a Coming soon
+empty state while document printing is in development. Switching modes keeps
+the active photo session in memory; refreshing still clears photos.
+
 ## Privacy model
 
 PrintChum processes customer photos locally by default:
